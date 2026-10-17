@@ -1,0 +1,281 @@
+@import "tailwindcss";
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.52 0.105 223.128);
+  --primary-foreground: oklch(0.984 0.019 200.873);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.865 0.127 207.078);
+  --chart-2: oklch(0.715 0.143 215.221);
+  --chart-3: oklch(0.609 0.126 221.723);
+  --chart-4: oklch(0.52 0.105 223.128);
+  --chart-5: oklch(0.45 0.085 224.283);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.609 0.126 221.723);
+  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+}
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.45 0.085 224.283);
+  --primary-foreground: oklch(0.984 0.019 200.873);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.865 0.127 207.078);
+  --chart-2: oklch(0.715 0.143 215.221);
+  --chart-3: oklch(0.609 0.126 221.723);
+  --chart-4: oklch(0.52 0.105 223.128);
+  --chart-5: oklch(0.45 0.085 224.283);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.715 0.143 215.221);
+  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --radius-lg: var(--radius);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+a,
+button,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+a,
+input,
+select {
+  outline-offset: 4px;
+}
+:focus-visible {
+  outline: 2px solid var(--ring);
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+}
+.auth-layout {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.auth-story {
+  background: var(--muted);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 48px;
+}
+.story-body {
+  margin: auto 0;
+  max-width: 480px;
+  padding: 56px 0;
+}
+.story-body h2 {
+  font-size: clamp(36px, 4vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -1.8px;
+  font-weight: 650;
+  margin: 20px 0;
+}
+.story-body p {
+  color: var(--muted-foreground);
+  max-width: 390px;
+  font-size: 16px;
+}
+.story-art {
+  height: 150px;
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  margin: 40px 0 20px;
+}
+.story-art span {
+  background: var(--primary);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 52px;
+}
+.story-art span:nth-child(1) {
+  height: 32%;
+  opacity: 0.35;
+}
+.story-art span:nth-child(2) {
+  height: 51%;
+  opacity: 0.55;
+}
+.story-art span:nth-child(3) {
+  height: 74%;
+  opacity: 0.75;
+}
+.story-art span:nth-child(4) {
+  height: 100%;
+}
+.auth-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 90px 40px 60px;
+}
+.auth-box {
+  width: 100%;
+  max-width: 390px;
+}
+h1 {
+  font-size: 30px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+  margin: 0 0 12px;
+}
+.auth-box > p {
+  margin-bottom: 30px;
+  color: var(--muted-foreground);
+}
+.field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.field-error {
+  color: var(--destructive);
+  font-size: 13px;
+}
+.notice {
+  padding: 14px 16px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+}
+.notice-error {
+  border-color: var(--destructive);
+}
+.logo-dark {
+  display: none;
+}
+.dark .logo-light {
+  display: none;
+}
+.dark .logo-dark {
+  display: block;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-200%);
+  background: var(--card);
+  padding: 12px;
+}
+.skip-link:focus {
+  transform: none;
+}
+.workspace {
+  max-width: 1100px;
+  margin: auto;
+  padding: 32px 24px;
+}
+@media (max-width: 760px) {
+  .auth-layout {
+    display: block;
+  }
+  .auth-story {
+    display: none;
+  }
+  .auth-form {
+    min-height: 100dvh;
+    padding: 108px 24px 50px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keep supporting copy readable on the muted story surface without changing approved tokens. */
+.auth-story .story-body p,
+.auth-story small {
+  color: var(--foreground);
+}
+a:not([data-slot="button"]) {
+  color: var(--foreground);
+  text-decoration: underline;
+}
