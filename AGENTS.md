@@ -1,0 +1,2 @@
+# Production web instructions
+Read ../ilead-docs/AGENTS.md and documents 05 and 12 before changes. The root workspace reporting preference applies. Use Next App Router, strict TypeScript, approved tokens and both themes; do not edit UI_UX as application source. The Express backend owns authorization and all business rules. No public registration, fake success, credentials in browser storage or production test substitutes. Run commands in this repository. No Docker.
