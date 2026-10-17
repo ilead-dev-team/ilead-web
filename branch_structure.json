@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/account-foundation",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/account-foundation": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/account-foundation",
+    "origin"
+  ]
+}
