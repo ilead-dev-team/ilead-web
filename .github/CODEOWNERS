@@ -1,0 +1,3 @@
+# Enforced only after main protection is activated on an eligible GitHub plan.
+# Authors cannot approve their own PRs; another trusted owner is needed for owner-authored PRs.
+* @HJeandedieu
