@@ -46,3 +46,9 @@ All pages send no-referrer/noindex headers. Reset query codes and OAuth callback
 CI runs install, lint, type checking, unit checks, build and standalone browser checks. Local checks do not prove a clean Linux CI installation or hosted deployment; inspect PR checks. Live database migrations/concurrency/rollback, Gmail consent/delivery, actual devices, production proxy/log redaction and full UAT remain acceptance gates. Do not call this slice production verified.
 
 Framework setup follows the official [Next backend-for-frontend guide](https://nextjs.org/docs/app/guides/backend-for-frontend) and [Tailwind Next setup](https://tailwindcss.com/docs/installation/framework-guides/nextjs). The dependency lockfile pins the installed package graph.
+
+## Delivery recovery · 18 October 2026
+
+Original PR #1 was closed without merging. This branch recovers the preserved, tested commits `81b79dd` and `0b5635c` onto current bootstrap main; it does not execute or copy the rewritten remote feature head. Before recovery documentation and CI hardening, comparison with `0b5635c` showed only three inherited `.gitignore` lines. Application source, package scripts, dependency lockfile and ESLint configuration matched that known-safe commit exactly.
+
+CI checkout now sets `persist-credentials: false`, alongside read-only workflow permissions, so subsequent build/test scripts do not inherit checkout's Git credential. Required reviews and passing checks still need actual branch protection activation; these workflow settings alone do not enforce merge gates. Safe recovery is a repository delivery repair, not real database, Gmail or deployment acceptance.
