@@ -29,12 +29,16 @@ export function SessionGate({ children }: { children: ReactNode }) {
     user &&
     (user.role === "FACILITATOR"
       ? path ===
-        (user.hasRoundtable ? "/my-roundtable" : "/register-roundtable")
+          (user.hasRoundtable ? "/my-roundtable" : "/register-roundtable") ||
+        (user.hasRoundtable && path === "/issues")
       : path === "/dashboard" ||
         (user.role === "COORDINATOR" &&
-          ["/mailbox", "/mailbox/callback", "/people/recovery"].includes(
-            path,
-          )));
+          [
+            "/mailbox",
+            "/mailbox/callback",
+            "/people/recovery",
+            "/issues",
+          ].includes(path)));
   useEffect(() => {
     if (expired) router.replace(`/login?next=${encodeURIComponent(path)}`);
     else if (user && !allowed) router.replace(destination(user));

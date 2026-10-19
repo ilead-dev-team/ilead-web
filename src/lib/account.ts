@@ -59,9 +59,9 @@ export function permittedNext(next: string | null, user: User) {
   const path = next.split("?")[0];
   const allowed =
     user.role === "FACILITATOR"
-      ? ["/my-roundtable"]
+      ? ["/my-roundtable", "/issues"]
       : user.role === "COORDINATOR"
-        ? ["/dashboard", "/mailbox", "/people/recovery"]
+        ? ["/dashboard", "/mailbox", "/people/recovery", "/issues"]
         : ["/dashboard"];
   return allowed.includes(path!) ? next : base;
 }
