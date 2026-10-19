@@ -57,7 +57,15 @@ export function canReportAction(
   actor: { id: string; role: string },
   action: string,
 ) {
-  if (actor.role !== "COORDINATOR" || report.archivedAt) return false;
+  if (actor.role !== "COORDINATOR") return false;
+  if (action === "unarchive") return !!report.archivedAt;
+  if (action === "archive")
+    return (
+      !report.archivedAt &&
+      report.status === "SENT" &&
+      report.openChangeRequests === 0
+    );
+  if (report.archivedAt) return false;
   if (action === "takeover")
     return report.status === "DRAFT" && report.author.id !== actor.id;
   if (report.author.id !== actor.id) return false;

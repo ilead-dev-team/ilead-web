@@ -15,6 +15,7 @@ export default defineConfig({
     "report-library.spec.ts",
     "report-autosave.spec.ts",
     "report-history.spec.ts",
+    "report-archive.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,

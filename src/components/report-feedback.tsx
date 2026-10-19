@@ -292,6 +292,46 @@ function FeedbackFeed({ report }: { report: Report }) {
         automatically. Save messages before leaving; drafts stay only on this
         page.
       </p>
+      {archived && hasDraft && (
+        <section
+          aria-label="Unsent discussion drafts"
+          className="grid gap-3 rounded-xl border border-border p-4"
+        >
+          <h3 className="font-semibold">Unsent discussion drafts</h3>
+          <p>
+            These messages have not been posted. Copy them, discard them here,
+            or unarchive the report before posting. They stay only on this page.
+          </p>
+          {body && (
+            <p className="whitespace-pre-wrap break-words">Comment: {body}</p>
+          )}
+          {flagBody && (
+            <p className="whitespace-pre-wrap break-words">
+              Change request: {flagBody}
+            </p>
+          )}
+          {Object.entries(replyBodies)
+            .filter(([, message]) => message)
+            .map(([parent, message]) => (
+              <p key={parent} className="whitespace-pre-wrap break-words">
+                Reply: {message}
+              </p>
+            ))}
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setBody("");
+              setSectionId("");
+              setFlagBody("");
+              setFlagReview(false);
+              setReplyBodies({});
+            }}
+          >
+            Discard unsent discussion drafts
+          </Button>
+        </section>
+      )}
       {archived ? (
         <p role="status">Archived report discussions are read only.</p>
       ) : (
