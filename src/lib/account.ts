@@ -71,7 +71,9 @@ export function permittedNext(next: string | null, user: User) {
             "/curriculum",
           ]
         : ["/dashboard", "/curriculum"];
-  return allowed.includes(path!) || roundtablePath(path!, user.role)
+  return allowed.includes(path!) ||
+    roundtablePath(path!, user.role) ||
+    sessionPath(path!, user.role)
     ? next
     : base;
 }
@@ -84,5 +86,16 @@ export function roundtablePath(path: string, role: string) {
         path,
       ) ||
       (role === "COORDINATOR" && path === "/roundtables/trash"))
+  );
+}
+
+export function sessionPath(path: string, role: string) {
+  return (
+    role === "COORDINATOR" &&
+    (path === "/sessions" ||
+      path === "/sessions/new" ||
+      /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        path,
+      ))
   );
 }
