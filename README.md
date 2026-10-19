@@ -66,3 +66,13 @@ Checks for this slice: 12 logic tests; the original ten account browser cases an
 `/curriculum` lets Coordinators and Sponsors edit lesson titles, with fixed lesson numbers and levels. Each save sends only a trimmed title (1–200 characters) to the existing Express endpoint. Failed saves retain text; success requires a validated server acknowledgement. Successful writes invalidate all curriculum query caches, including the registration dropdown. Facilitators are redirected away from the editing screen; Express remains responsible for authorization.
 
 The screen provides loading, retry, field validation and per-lesson save feedback. Tests cover title boundaries, role return routes, failed-save preservation, successful reload, mobile overflow and light/dark accessibility. Browser API responses are explicit test substitutes, not real PostgreSQL acceptance. Activity-type and section-template settings, roundtable management and session entry remain W2.08 work. No Docker or database writes were used.
+
+## W2.08 activity and section settings
+
+Coordinator-only `/settings/activities` and `/settings/sections` connect to the existing Express configuration endpoints. Activity types support creation, renaming, numeric positions and active/inactive state; historical records are retained. Custom sections support title/kind on creation, later renaming and archive/restore through the availability checkbox. Kind and system flags are read-only after creation, and system sections have no archive control. The backend still enforces roles, uniqueness and protected-system rules.
+
+Lists request 20 records per page, with state filters that reset paging. Input limits match backend constraints. Failed requests retain input; writes validate the returned record before showing success and invalidate account-scoped list caches. New activity/section forms clear only after acknowledgement. No optimistic writes or automatic network retries are used.
+
+Verification includes 16 logic tests and 19 browser cases, including duplicate errors, activity edits/position/deactivation, create, custom section archive/restore, system protections, filter paging and denied Sponsor routes with zero settings requests. Activity light/dark axe and mobile overflow checks and section light axe checks use explicit API substitutes. Screenshots were visually inspected. Real database acceptance, roundtable management and session-entry screens remain pending. No Docker or live database writes.
+
+Formatting for all files changed in this settings slice passes. The optional repository-wide Prettier check flags 41 unchanged baseline files; those unrelated files were not reformatted.
