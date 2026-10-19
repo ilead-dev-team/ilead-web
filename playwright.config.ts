@@ -8,6 +8,7 @@ export default defineConfig({
     "roundtables.spec.ts",
     "configuration.spec.ts",
     "sessions.spec.ts",
+    "entries.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
