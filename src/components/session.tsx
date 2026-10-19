@@ -38,6 +38,8 @@ export function SessionGate({ children }: { children: ReactNode }) {
             "/mailbox",
             "/mailbox/callback",
             "/people/recovery",
+            "/settings/activities",
+            "/settings/sections",
             "/issues",
           ].includes(path)));
   useEffect(() => {
