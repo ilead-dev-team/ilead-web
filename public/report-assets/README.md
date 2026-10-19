@@ -1,0 +1,1 @@
+Institutional report assets copied unchanged from ilead-backend/assets. The RCA shield originates in the approved report reference. Carlito fonts originate in Google Fonts and are distributed under the SIL Open Font License included in fonts/OFL.txt. These assets apply only to report documents, not app branding.

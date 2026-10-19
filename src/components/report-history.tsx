@@ -7,7 +7,7 @@ import { parseVersion, validateDocx, versionPage } from "@/lib/report-history";
 import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Feedback, Pending } from "./account/feedback";
-import { ReportContent } from "./report-content";
+import { ReportDocument } from "./report-document";
 export function ReportHistory({
   report,
   blocked,
@@ -217,9 +217,10 @@ export function ReportHistory({
                 {version.data.author.name} · {version.data.academicYear} ·{" "}
                 {version.data.term.name}
               </p>
-              <ReportContent
-                sections={version.data.sections}
-                context={`Sent version ${selected}`}
+              <ReportDocument
+                report={version.data}
+                label={`Sent version ${selected}`}
+                historical
               />
               <Button
                 variant="outline"

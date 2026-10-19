@@ -18,7 +18,7 @@ import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
-import { ReportContent } from "./report-content";
+import { ReportDocument } from "./report-document";
 import { ReportFeedback } from "./report-feedback";
 import { ReportHistory } from "./report-history";
 import { ReportLibrary } from "./report-library";
@@ -795,7 +795,11 @@ function ReportDetailWorkspace({ id }: { id: string }) {
               </form>
               <details className="my-5 rounded-xl border border-border p-5">
                 <summary>Preview current content</summary>
-                <ReportContent sections={sections} />
+                <ReportDocument
+                  report={report}
+                  workingSections={sections}
+                  unsaved={dirty}
+                />
               </details>
               {autosavePaused && !save.isPending && (
                 <p role="status">
@@ -822,7 +826,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
               </div>
             </>
           ) : (
-            <ReportContent sections={report.sections} />
+            <ReportDocument report={report} />
           )}
           {dirty && !editable && (
             <div className="my-4 grid gap-3">

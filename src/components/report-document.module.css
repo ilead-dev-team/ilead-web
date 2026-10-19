@@ -1,0 +1,146 @@
+@font-face {
+  font-family: "Report Carlito";
+  src: url("/report-assets/fonts/Carlito-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Report Carlito";
+  src: url("/report-assets/fonts/Carlito-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Report Carlito";
+  src: url("/report-assets/fonts/Carlito-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Report Carlito";
+  src: url("/report-assets/fonts/Carlito-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+.viewport {
+  max-width: 100%;
+  overflow-x: auto;
+  min-width: 0;
+}
+.viewport:focus-visible,
+.tableViewport:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.paper {
+  box-sizing: border-box;
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 20mm;
+  background: #fff;
+  color: #000;
+  font-family: "Report Carlito", Calibri, sans-serif;
+  font-size: 11pt;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  color-scheme: light;
+}
+.header {
+  text-align: center;
+  border-bottom: 1px solid #1a254a;
+  padding-bottom: 12pt;
+  margin-bottom: 12pt;
+}
+.header img {
+  margin: 0 auto 6pt;
+}
+.paper .academy {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #1a254a;
+}
+.paper .program {
+  font-size: 10pt;
+  color: #64748b;
+}
+.paper h3 {
+  font-size: 15pt;
+  font-weight: 700;
+  color: #1a254a;
+  margin: 10pt 0 6pt;
+}
+.paper .metadata {
+  font-size: 9pt;
+  color: #64748b;
+}
+.paper h4 {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #1a254a;
+  margin: 12pt 0 6pt;
+  break-after: avoid;
+}
+.paper p {
+  margin: 0 0 5pt;
+  white-space: pre-wrap;
+}
+.paper ul {
+  list-style: disc;
+  padding-left: 18pt;
+  margin: 0 0 5pt;
+}
+.paper li {
+  margin-bottom: 5pt;
+  white-space: pre-wrap;
+}
+.tableViewport {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.paper table {
+  min-width: 480px;
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-bottom: 5pt;
+}
+.paper th,
+.paper td {
+  border: 1px solid #334155;
+  padding: 5pt;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+.paper th {
+  background: #f1f5f9;
+  font-weight: 700;
+}
+.paper .progress th:first-child {
+  background: #1a254a;
+  color: #fff;
+}
+.paper thead {
+  display: table-header-group;
+}
+.paper tr {
+  break-inside: avoid;
+}
+@media (max-width: 900px) {
+  .paper {
+    padding: 20px;
+    min-height: auto;
+  }
+}
+.paper.actual {
+  min-width: 210mm;
+  max-width: none;
+  min-height: 297mm;
+  padding: 20mm;
+}
