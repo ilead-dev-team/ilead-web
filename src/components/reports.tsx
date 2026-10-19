@@ -19,6 +19,7 @@ import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
 import { ReportContent } from "./report-content";
+import { ReportFeedback } from "./report-feedback";
 import { ReportSectionEditor } from "./report-section-editor";
 
 export function SessionReport({
@@ -626,6 +627,7 @@ export function ReportDetail({ id }: { id: string }) {
               </Button>
             </div>
           )}
+          <ReportFeedback report={report} />
           {invalid && (
             <p role="alert" className="field-error">
               {invalid}
