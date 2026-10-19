@@ -179,6 +179,18 @@ test("version list retries and pages, and selected snapshots reject drafts and m
   await expect(
     selected.getByText("Published version 2", { exact: true }),
   ).toBeVisible();
+  await expect(
+    selected.getByRole("article", {
+      name: "Sent version 2 document",
+      exact: true,
+    }),
+  ).toContainText("Sent version 2");
+  await expect(
+    selected.getByText(
+      "Formatted with the current approved document style; the published content is unchanged.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Next versions", exact: true })
     .click();
