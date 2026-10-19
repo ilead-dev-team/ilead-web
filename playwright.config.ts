@@ -6,6 +6,7 @@ export default defineConfig({
     "issues.spec.ts",
     "curriculum.spec.ts",
     "configuration.spec.ts",
+    "sessions.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,

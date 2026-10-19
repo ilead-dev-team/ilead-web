@@ -43,6 +43,7 @@ export function Workspace({ children }: { children: ReactNode }) {
           )}
           {user.role === "COORDINATOR" && (
             <>
+              <Link href="/sessions">Sessions</Link>
               <Link href="/settings/activities">Activity types</Link>
               <Link href="/settings/sections">Section library</Link>
               <Link href="/mailbox">Connected mailbox</Link>

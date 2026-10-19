@@ -71,5 +71,16 @@ export function permittedNext(next: string | null, user: User) {
             "/curriculum",
           ]
         : ["/dashboard", "/curriculum"];
-  return allowed.includes(path!) ? next : base;
+  return allowed.includes(path!) || sessionPath(path!, user.role) ? next : base;
+}
+
+export function sessionPath(path: string, role: string) {
+  return (
+    role === "COORDINATOR" &&
+    (path === "/sessions" ||
+      path === "/sessions/new" ||
+      /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        path,
+      ))
+  );
 }
