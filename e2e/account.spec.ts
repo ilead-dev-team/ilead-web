@@ -313,7 +313,14 @@ test("roundtable registration uses curriculum choices and retains input after a 
   await page.route("**/api/v1/auth/me", (r) =>
     r.fulfill({
       json: {
-        data: { ...user, role: "FACILITATOR", hasRoundtable: registered },
+        data: {
+          ...user,
+          role: "FACILITATOR",
+          hasRoundtable: registered,
+          roundtableId: registered
+            ? "22222222-2222-4222-8222-222222222222"
+            : null,
+        },
       },
     }),
   );
@@ -348,19 +355,36 @@ test("roundtable registration uses curriculum choices and retains input after a 
       await r.fulfill({ status: 201, json: { data: { id: "rt" } } });
     }
   });
-  await page.route("**/api/v1/roundtables/me", (r) =>
-    r.fulfill({
-      json: {
-        data: {
-          name: "New name",
-          slogan: "Keep growing",
-          currentLevel: "ICHOOSE",
-          status: "ACTIVE",
-          lastLesson: null,
-          nextLesson: { number: 1, title: "Choices" },
+  await page.route(
+    "**/api/v1/roundtables/22222222-2222-4222-8222-222222222222",
+    (r) =>
+      r.fulfill({
+        json: {
+          data: {
+            id: "22222222-2222-4222-8222-222222222222",
+            classYear: "YEAR_1",
+            completedAt: null,
+            facilitator: null,
+            enrolledAt: "2026-10-19T08:00:00.000Z",
+            attendance: { met: 0, didNotMeet: 0, history: [] },
+            name: "New name",
+            slogan: "Keep growing",
+            currentLevel: "ICHOOSE",
+            status: "ACTIVE",
+            lastLesson: null,
+            nextLesson: {
+              id: "l",
+              level: "ICHOOSE",
+              number: 1,
+              title: "Choices",
+            },
+          },
         },
-      },
-    }),
+      }),
+  );
+  await page.route(
+    "**/api/v1/roundtables/22222222-2222-4222-8222-222222222222/progress",
+    (r) => r.fulfill({ json: { data: { completed: [] } } }),
   );
   await page.goto("/register-roundtable");
   await page.getByLabel("Roundtable name").fill("Pinnacles");

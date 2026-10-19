@@ -67,6 +67,14 @@ Checks for this slice: 12 logic tests; the original ten account browser cases an
 
 The screen provides loading, retry, field validation and per-lesson save feedback. Tests cover title boundaries, role return routes, failed-save preservation, successful reload, mobile overflow and light/dark accessibility. Browser API responses are explicit test substitutes, not real PostgreSQL acceptance. Activity-type and section-template settings, roundtable management and session entry remain W2.08 work. No Docker or database writes were used.
 
+## W2.08 roundtable management and history
+
+`/roundtables` gives Coordinators and Sponsors paginated search, class/level/status filters and sorting. `/roundtables/:id` shows current/next lesson, completion state, level-filtered completed lessons and attendance history. Enrollment baseline lessons are labelled Before registration rather than given invented dates. The existing Facilitator `/my-roundtable` now uses the same history view for the session-owned roundtable ID. Sponsors receive no edit or lifecycle controls.
+
+Coordinators and owning Facilitators can edit name, slogan and class only; progress fields are never sent. Backend similarity checks remain authoritative. Failed saves retain input and successful validated acknowledgements refresh roundtable caches. Coordinator trash actions require confirmation, keep the name reserved and detach the Facilitator; `/roundtables/trash` displays the server restore deadline. Restore failures remain visible, and the backend enforces the 30-day window and original-Facilitator eligibility. Lifecycle success refreshes roundtable and dashboard caches. There is no permanent-delete control or automatic network retry.
+
+Checks for this slice: 17 logic tests and 19 browser cases, including filter paging, trash confirmation/cancellation, blocked/successful restore, own detail editing with failed-name preservation, baseline/session history, light/dark accessibility, mobile overflow and Sponsor read-only/trash restrictions. Screenshot inspected. Browser API responses are explicit substitutes; real PostgreSQL, provider and deployment acceptance remain pending. No Docker or live database writes. Session-entry screens remain the next W2.08 slice.
+
 ## W2.08 activity and section settings
 
 Coordinator-only `/settings/activities` and `/settings/sections` connect to the existing Express configuration endpoints. Activity types support creation, renaming, numeric positions and active/inactive state; historical records are retained. Custom sections support title/kind on creation, later renaming and archive/restore through the availability checkbox. Kind and system flags are read-only after creation, and system sections have no archive control. The backend still enforces roles, uniqueness and protected-system rules.
@@ -76,3 +84,13 @@ Lists request 20 records per page, with state filters that reset paging. Input l
 Verification includes 16 logic tests and 19 browser cases, including duplicate errors, activity edits/position/deactivation, create, custom section archive/restore, system protections, filter paging and denied Sponsor routes with zero settings requests. Activity light/dark axe and mobile overflow checks and section light axe checks use explicit API substitutes. Screenshots were visually inspected. Real database acceptance, roundtable management and session-entry screens remain pending. No Docker or live database writes.
 
 Formatting for all files changed in this settings slice passes. The optional repository-wide Prettier check flags 41 unchanged baseline files; those unrelated files were not reformatted.
+
+After integrating the merged settings slice, the combined suite contains 19 logic tests and 22 browser cases. Both settings and roundtable routes remain included.
+
+## W2.08 session management
+
+Coordinator-only `/sessions`, `/sessions/new` and `/sessions/:id` connect list, create, edit, cancel and reopen operations to the existing Express APIs. Lists support status/date filters and pagination. Date ranges are validated before fetching. Activity options load across pages; historical inactive activities remain editable on their existing session. Notes and selections survive failed writes. Creation disables repeat submission after acknowledgement while navigating to the new session.
+
+Cancellation requires a reason and confirmation; reopening also requires confirmation. Cancelled sessions hide the edit form. The backend enforces term/year coverage, date uniqueness, date locking and the entry/report cancellation guards. The UI does not remove entries, invent progress or retry uncertain writes automatically. Successful acknowledgements refresh session and dashboard caches.
+
+Tests cover calendar failure recovery, creation navigation, retained inactive activities, metadata edits, blocked cancellation with preserved reason, successful cancellation/reopening, filter page reset, invalid date ranges and Coordinator-only route access. Light/dark axe and mobile overflow checks passed; screenshot inspected. Browser APIs are explicit substitutes. No Docker or live database writes. Remaining session work: paginated bulk entry editor, academic-year/term filters and report links/building. Real database/provider/deployment acceptance remains pending.
