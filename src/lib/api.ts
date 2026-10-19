@@ -4,6 +4,7 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public requestId?: string,
+    public details?: unknown,
   ) {
     super(message);
   }
@@ -95,6 +96,7 @@ export function createApiClient(
         payload.error?.code ?? "REQUEST_FAILED",
         payload.error?.message ?? "The request failed. Try again.",
         payload.error?.requestId,
+        payload.error?.details,
       );
     }
     options.onResponse?.(response);

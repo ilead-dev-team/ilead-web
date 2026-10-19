@@ -14,6 +14,7 @@ import {
   type SessionRecord,
 } from "@/lib/sessions";
 import { useSession } from "./session";
+import { Entries } from "./entries";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
@@ -468,6 +469,8 @@ export function NewSession() {
 }
 export function SessionDetail({ id }: { id: string }) {
   const user = useSession();
+  const [showEntries, setShowEntries] = useState(false),
+    [entriesDirty, setEntriesDirty] = useState(false);
   const query = useQuery({
     queryKey: ["sessions", "detail", user.id, id],
     queryFn: async () =>
@@ -515,14 +518,32 @@ export function SessionDetail({ id }: { id: string }) {
             </ul>
           </div>
           {row.status === "HELD" ? (
-            <SessionForm key={row.id} row={row} />
+            <SessionForm key={`metadata-${row.id}`} row={row} />
           ) : (
             <p role="status">
               This session is cancelled. Reopen it before editing or recording
               entries.
             </p>
           )}
-          <SessionLifecycle key={`${row.id}-${row.status}`} row={row} />
+          {row.status === "HELD" &&
+            (showEntries ? (
+              <Entries
+                key={`entries-${row.id}`}
+                sessionId={row.id}
+                onDirty={setEntriesDirty}
+              />
+            ) : (
+              <Button onClick={() => setShowEntries(true)}>
+                Record or correct entries
+              </Button>
+            ))}
+          {entriesDirty ? (
+            <p role="status">
+              Save or discard entry changes before cancelling this session.
+            </p>
+          ) : (
+            <SessionLifecycle key={`${row.id}-${row.status}`} row={row} />
+          )}
         </>
       )}
     </section>
