@@ -110,7 +110,11 @@ export function sectionPayload(sections: ReportSection[]) {
       });
       const { title, kind, content } = parsed;
       return {
-        ...(section.id.startsWith("new-") ? {} : { id: section.id }),
+        ...(section.id.startsWith("new-")
+          ? section.key
+            ? { templateKey: z.string().min(1).max(100).parse(section.key) }
+            : {}
+          : { id: section.id }),
         title,
         kind,
         content,

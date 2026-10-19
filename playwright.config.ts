@@ -12,6 +12,7 @@ export default defineConfig({
     "calendar.spec.ts",
     "reports.spec.ts",
     "report-feedback.spec.ts",
+    "report-library.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
