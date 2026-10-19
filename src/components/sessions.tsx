@@ -16,6 +16,7 @@ import {
 } from "@/lib/sessions";
 import { useSession } from "./session";
 import { Entries } from "./entries";
+import { SessionReport } from "./reports";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
@@ -633,6 +634,7 @@ export function SessionDetail({ id }: { id: string }) {
                 Record or correct entries
               </Button>
             ))}
+          <SessionReport session={row} disabled={entriesDirty} />
           {entriesDirty ? (
             <p role="status">
               Save or discard entry changes before cancelling this session.

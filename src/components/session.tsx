@@ -8,6 +8,7 @@ import {
   destination,
   roundtablePath,
   sessionPath,
+  reportPath,
   type User,
 } from "@/lib/account";
 import { Feedback, Pending } from "./account/feedback";
@@ -41,6 +42,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
         path === "/curriculum" ||
         roundtablePath(path, user.role) ||
         sessionPath(path, user.role) ||
+        reportPath(path, user.role) ||
         (user.role === "COORDINATOR" &&
           [
             "/mailbox",

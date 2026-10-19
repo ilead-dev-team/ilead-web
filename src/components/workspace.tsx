@@ -41,6 +41,7 @@ export function Workspace({ children }: { children: ReactNode }) {
           {user.role !== "FACILITATOR" && (
             <>
               <Link href="/roundtables">Roundtables</Link>
+              <Link href="/reports">Reports</Link>
               <Link href="/curriculum">Curriculum</Link>
             </>
           )}
