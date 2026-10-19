@@ -5,6 +5,7 @@ export default defineConfig({
     "account.spec.ts",
     "issues.spec.ts",
     "curriculum.spec.ts",
+    "roundtables.spec.ts",
     "configuration.spec.ts",
   ],
   fullyParallel: false,

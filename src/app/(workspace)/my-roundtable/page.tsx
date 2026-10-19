@@ -1,5 +1,5 @@
-import { MyRoundtable } from "@/components/program";
+import { RoundtableDetail } from "@/components/roundtables";
 export const metadata = { title: "My roundtable" };
 export default function Page() {
-  return <MyRoundtable />;
+  return <RoundtableDetail own />;
 }
