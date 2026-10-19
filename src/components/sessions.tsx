@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { activityPage } from "@/lib/configuration";
+import { loadAcademicYears } from "@/lib/academic";
 import {
   sessionRecord,
   sessionPage,
@@ -314,18 +315,38 @@ export function Sessions() {
   const user = useSession(),
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
+    [academicYearId, setAcademicYearId] = useState(""),
+    [termId, setTermId] = useState(""),
     [from, setFrom] = useState(""),
     [to, setTo] = useState(""),
     [range, setRange] = useState({ from: "", to: "" }),
     [invalid, setInvalid] = useState<string>();
+  const calendar = useQuery({
+    queryKey: ["academic-years", user.id, user.role],
+    queryFn: ({ signal }) => loadAcademicYears(signal),
+  });
+  const selectedYear = calendar.data?.find(
+    (year) => year.id === academicYearId,
+  );
   const query = useQuery({
-    queryKey: ["sessions", "list", user.id, page, status, range],
+    queryKey: [
+      "sessions",
+      "list",
+      user.id,
+      page,
+      status,
+      range,
+      academicYearId,
+      termId,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         pageSize: "20",
       });
       if (status) params.set("status", status);
+      if (academicYearId) params.set("academicYearId", academicYearId);
+      if (termId) params.set("termId", termId);
       if (range.from) params.set("from", range.from);
       if (range.to) params.set("to", range.to);
       return sessionPage.parse(await api(`/sessions?${params}`));
@@ -341,6 +362,81 @@ export function Sessions() {
       <Link className="underline" href="/sessions/new">
         New session
       </Link>
+      <div className="my-5 grid gap-4 sm:grid-cols-2">
+        <Field id="sessions-year" label="Academic year">
+          <Select
+            id="sessions-year"
+            value={academicYearId}
+            disabled={!calendar.data}
+            onChange={(event) => {
+              setAcademicYearId(event.target.value);
+              setTermId("");
+              setPage(1);
+            }}
+          >
+            <option value="">All academic years</option>
+            {calendar.data?.map((year) => (
+              <option key={year.id} value={year.id}>
+                {year.label}
+                {year.isCurrent ? " (current)" : ""}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field
+          id="sessions-term"
+          label="Term"
+          help="Choose an academic year to filter by one of its terms."
+        >
+          <Select
+            id="sessions-term"
+            value={termId}
+            disabled={!selectedYear}
+            aria-describedby="sessions-term-help"
+            onChange={(event) => {
+              setTermId(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All terms</option>
+            {selectedYear?.terms.map((term) => (
+              <option key={term.id} value={term.id}>
+                {term.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <Pending active={calendar.isPending} />
+      <Feedback error={calendar.error} />
+      {calendar.isError && (
+        <div className="my-3 flex flex-wrap items-center gap-3">
+          <p>
+            Calendar filters are unavailable. You can still browse sessions.
+          </p>
+          <Button variant="outline" onClick={() => calendar.refetch()}>
+            Retry calendar
+          </Button>
+        </div>
+      )}
+      {calendar.data?.length === 0 && (
+        <p role="status">
+          No academic years configured. Calendar filters will appear after
+          setup.
+        </p>
+      )}
+      {(academicYearId || termId) && (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setAcademicYearId("");
+            setTermId("");
+            setPage(1);
+          }}
+        >
+          Clear calendar filters
+        </Button>
+      )}
       <form
         className="my-5 grid gap-4 sm:grid-cols-3"
         noValidate
