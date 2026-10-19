@@ -8,7 +8,6 @@ import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
-const levels = { ICHOOSE: "iChoose", IDO: "iDo", ILEAD: "iLead" };
 export function Dashboard() {
   const user = useSession();
   const query = useQuery({
@@ -203,57 +202,5 @@ export function RegisterRoundtable() {
         </form>
       )}
     </div>
-  );
-}
-export function MyRoundtable() {
-  const user = useSession();
-  const query = useQuery({
-    queryKey: ["my-roundtable", user.id],
-    queryFn: () =>
-      api<{
-        data: {
-          name: string;
-          slogan: string;
-          currentLevel: keyof typeof levels;
-          status: string;
-          nextLesson: { number: number; title: string } | null;
-          lastLesson: { number: number; title: string } | null;
-        };
-      }>("/roundtables/me"),
-  });
-  const rt = query.data?.data;
-  return (
-    <>
-      <h1>My roundtable</h1>
-      <Pending active={query.isPending} />
-      {query.isError && (
-        <>
-          <Feedback error={query.error} />
-          <Button onClick={() => query.refetch()}>Try again</Button>
-        </>
-      )}
-      {rt && (
-        <section className="mt-6 max-w-2xl rounded-lg border border-border bg-card p-7">
-          <h2 className="text-2xl font-semibold">{rt.name}</h2>
-          <p className="text-muted-foreground">{rt.slogan}</p>
-          <p className="mt-6 font-semibold">
-            {levels[rt.currentLevel]} ·{" "}
-            {rt.status === "COMPLETED" ? "Completed" : "Active"}
-          </p>
-          <p>
-            Last completed:{" "}
-            {rt.lastLesson
-              ? `Lesson ${rt.lastLesson.number}: ${rt.lastLesson.title}`
-              : "No lesson completed yet."}
-          </p>
-          <p>
-            Next lesson:{" "}
-            {rt.nextLesson
-              ? `${rt.nextLesson.number}. ${rt.nextLesson.title}`
-              : "Program complete."}
-          </p>
-        </section>
-      )}
-    </>
   );
 }

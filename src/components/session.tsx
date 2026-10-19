@@ -3,7 +3,12 @@ import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { userSchema, destination, type User } from "@/lib/account";
+import {
+  userSchema,
+  destination,
+  roundtablePath,
+  type User,
+} from "@/lib/account";
 import { Feedback, Pending } from "./account/feedback";
 import { Button } from "./ui/button";
 export const SessionContext = createContext<User | null>(null);
@@ -33,6 +38,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
         (user.hasRoundtable && path === "/issues")
       : path === "/dashboard" ||
         path === "/curriculum" ||
+        roundtablePath(path, user.role) ||
         (user.role === "COORDINATOR" &&
           [
             "/mailbox",
