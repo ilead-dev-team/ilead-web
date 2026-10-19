@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -23,6 +23,10 @@ import { ReportFeedback } from "./report-feedback";
 import { ReportLibrary } from "./report-library";
 import { newReportSection, parseCreatedTemplate } from "@/lib/report-library";
 import { ReportSectionEditor } from "./report-section-editor";
+import {
+  validateSaveAcknowledgement,
+  rebaseReportDraft,
+} from "@/lib/report-autosave";
 
 export function SessionReport({
   session,
@@ -295,6 +299,12 @@ const actionCopy: Record<
   },
 };
 export function ReportDetail({ id }: { id: string }) {
+  const user = useSession();
+  return (
+    <ReportDetailWorkspace key={`${id}-${user.id}-${user.role}`} id={id} />
+  );
+}
+function ReportDetailWorkspace({ id }: { id: string }) {
   const user = useSession(),
     cache = useQueryClient();
   const key = ["reports", "detail", user.id, user.role, id];
@@ -305,6 +315,17 @@ export function ReportDetail({ id }: { id: string }) {
     [customTitle, setCustomTitle] = useState(""),
     [customKind, setCustomKind] = useState("TEXT"),
     [saveToLibrary, setSaveToLibrary] = useState(false);
+  const latestDraft = useRef<ReportSection[] | null>(null);
+  const saving = useRef(false);
+  const libraryWriting = useRef(false);
+  const [autosavePaused, setAutosavePaused] = useState(false);
+  const [savedAt, setSavedAt] = useState<string>();
+  const [editorKeys, setEditorKeys] = useState<Record<string, string>>({});
+  const clearDraft = () => {
+    latestDraft.current = null;
+    setDrafts(null);
+    setAutosavePaused(false);
+  };
   const query = useQuery({
     queryKey: key,
     staleTime: 0,
@@ -337,28 +358,63 @@ export function ReportDetail({ id }: { id: string }) {
   }, [dirty]);
   const accept = async (result: Report, message: string) => {
     cache.setQueryData(key, result);
-    setDrafts(null);
+    clearDraft();
     setIntent(null);
     setNotice(message);
     await cache.invalidateQueries({ queryKey: ["reports", "list"] });
     await cache.invalidateQueries({ queryKey: ["sessions"] });
   };
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (snapshot: ReportSection[]) => {
+      if (!editable) throw new Error("This report is no longer editable.");
       const result = parseReport(
         (
           await api<{ data: unknown }>(`/reports/${id}/sections`, {
             method: "PATCH",
-            body: sectionPayload(sections),
+            body: sectionPayload(snapshot),
           })
         ).data,
         user.role,
       );
-      if (result.id !== id || result.status !== "DRAFT")
-        throw new Error("Unexpected save acknowledgement");
-      return result;
+      return validateSaveAcknowledgement(snapshot, result, id, user.id);
     },
-    onSuccess: (result) => accept(result, "Report saved."),
+    onSuccess: async (result, snapshot) => {
+      setEditorKeys((previous) => {
+        const next = { ...previous };
+        snapshot.forEach((section, index) => {
+          next[result.sections[index]!.id] = previous[section.id] ?? section.id;
+        });
+        return next;
+      });
+      const current = latestDraft.current;
+      const next =
+        current === snapshot || current === null
+          ? null
+          : rebaseReportDraft(snapshot, result.sections, current);
+      latestDraft.current = next;
+      setDrafts(next);
+      cache.setQueryData(key, result);
+      setAutosavePaused(false);
+      setSavedAt(
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
+      setNotice(
+        next
+          ? "Earlier changes saved; newer edits are waiting to save."
+          : "Report saved.",
+      );
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ["reports", "list"] }),
+        cache.invalidateQueries({ queryKey: ["sessions"] }),
+      ]);
+    },
+    onError: () => setAutosavePaused(true),
+    onSettled: () => {
+      saving.current = false;
+    },
   });
   const transition = useMutation({
     mutationFn: async (action: Action) => {
@@ -394,6 +450,7 @@ export function ReportDetail({ id }: { id: string }) {
     mutationFn: async ({ title, kind }: { title: string; kind: string }) => {
       if (!editable || sections.length >= 30)
         throw new Error("Section creation unavailable");
+      libraryWriting.current = true;
       return parseCreatedTemplate(
         (
           await api<{ data: unknown }>("/section-templates", {
@@ -424,17 +481,51 @@ export function ReportDetail({ id }: { id: string }) {
         queryKey: ["configuration", "sections"],
       });
     },
+    onSettled: () => {
+      libraryWriting.current = false;
+    },
   });
   const busy =
     save.isPending || transition.isPending || createTemplate.isPending;
   const change = (next: ReportSection[]) => {
+    latestDraft.current = next;
     setDrafts(next);
     setNotice("");
     setInvalid(undefined);
-    save.reset();
     transition.reset();
     setIntent(null);
   };
+  const { mutate: mutateSave } = save;
+  const saveNow = useCallback(
+    (manual = false) => {
+      const snapshot = latestDraft.current;
+      if (
+        !snapshot ||
+        !editable ||
+        busy ||
+        saving.current ||
+        libraryWriting.current ||
+        (!manual && autosavePaused)
+      )
+        return;
+      try {
+        sectionPayload(snapshot);
+        setInvalid(undefined);
+        saving.current = true;
+        mutateSave(snapshot);
+      } catch {
+        setInvalid(
+          "Check section titles, content limits and table dimensions before saving.",
+        );
+      }
+    },
+    [editable, busy, autosavePaused, mutateSave],
+  );
+  useEffect(() => {
+    if (!dirty || !editable || busy || autosavePaused) return;
+    const timer = setTimeout(() => saveNow(), 5000);
+    return () => clearTimeout(timer);
+  }, [drafts, dirty, editable, busy, autosavePaused, saveNow]);
   const choose = (action: Action) => {
     setIntent(action);
     transition.reset();
@@ -468,6 +559,20 @@ export function ReportDetail({ id }: { id: string }) {
               Author: {report.author.name} · Version {report.version}
             </p>
             <p>{report.openChangeRequests} open change requests</p>
+            {editable && (
+              <>
+                <p role="status">
+                  {save.isPending
+                    ? "Saving report…"
+                    : dirty
+                      ? "Unsaved report changes"
+                      : "Saved report content"}
+                </p>
+                {savedAt && !dirty && !save.isPending && (
+                  <p>Saved at {savedAt}</p>
+                )}
+              </>
+            )}
             {report.firstReadAt && (
               <p>First read: {report.firstReadAt.slice(0, 10)}</p>
             )}
@@ -476,14 +581,31 @@ export function ReportDetail({ id }: { id: string }) {
           {editable ? (
             <>
               <p className="mb-4 text-muted-foreground">
-                Save explicitly before confirming or leaving this page. Unsaved
-                edits stay after failures but are lost when navigating away.
-                Automatic saving is not available yet.
+                Report content saves five seconds after editing stops and when a
+                content field loses focus. You can also use Save report. Wait
+                for saved confirmation before leaving. Failed saves keep your
+                edits and pause autosave until you retry. Drafts are lost when
+                navigating away.
               </p>
-              <div className="grid gap-5">
+              <div
+                className="grid gap-5"
+                onBlur={(event) => {
+                  if (
+                    event.target instanceof HTMLInputElement ||
+                    event.target instanceof HTMLTextAreaElement
+                  ) {
+                    if (
+                      event.relatedTarget instanceof Element &&
+                      event.relatedTarget.closest("button")
+                    )
+                      return;
+                    saveNow();
+                  }
+                }}
+              >
                 {sections.map((section, index) => (
                   <article
-                    key={section.id}
+                    key={editorKeys[section.id] ?? section.id}
                     className="min-w-0 rounded-xl border border-border p-5"
                   >
                     <h2>{section.title}</h2>
@@ -494,7 +616,9 @@ export function ReportDetail({ id }: { id: string }) {
                     </p>
                     <ReportSectionEditor
                       section={section}
-                      disabled={busy}
+                      disabled={
+                        transition.isPending || createTemplate.isPending
+                      }
                       change={(next) =>
                         change(
                           sections.map((current) =>
@@ -590,7 +714,7 @@ export function ReportDetail({ id }: { id: string }) {
                     id="custom-title"
                     maxLength={120}
                     value={customTitle}
-                    disabled={busy}
+                    disabled={transition.isPending || createTemplate.isPending}
                     onChange={(event) => setCustomTitle(event.target.value)}
                   />
                 </Field>
@@ -598,7 +722,7 @@ export function ReportDetail({ id }: { id: string }) {
                   <Select
                     id="custom-kind"
                     value={customKind}
-                    disabled={busy}
+                    disabled={transition.isPending || createTemplate.isPending}
                     onChange={(event) => setCustomKind(event.target.value)}
                   >
                     <option value="TEXT">Text</option>
@@ -610,7 +734,7 @@ export function ReportDetail({ id }: { id: string }) {
                   <input
                     type="checkbox"
                     checked={saveToLibrary}
-                    disabled={busy}
+                    disabled={transition.isPending || createTemplate.isPending}
                     onChange={(event) => {
                       setSaveToLibrary(event.target.checked);
                       createTemplate.reset();
@@ -634,31 +758,21 @@ export function ReportDetail({ id }: { id: string }) {
                 <summary>Preview current content</summary>
                 <ReportContent sections={sections} />
               </details>
-              <p role="status">
-                {dirty ? "Unsaved report changes" : "Saved report content"}
-              </p>
+              {autosavePaused && !save.isPending && (
+                <p role="status">
+                  Not saved — autosave is paused. Use Save report to retry. Your
+                  edits are still here.
+                </p>
+              )}
               <div className="my-4 flex flex-wrap gap-3">
-                <Button
-                  disabled={!dirty || busy}
-                  onClick={() => {
-                    try {
-                      sectionPayload(sections);
-                      setInvalid(undefined);
-                      save.mutate();
-                    } catch {
-                      setInvalid(
-                        "Check section titles, content limits and table dimensions before saving.",
-                      );
-                    }
-                  }}
-                >
+                <Button disabled={!dirty || busy} onClick={() => saveNow(true)}>
                   Save report
                 </Button>
                 <Button
                   variant="outline"
                   disabled={!dirty || busy}
                   onClick={() => {
-                    setDrafts(null);
+                    clearDraft();
                     setInvalid(undefined);
                     save.reset();
                     setNotice("");
@@ -681,7 +795,7 @@ export function ReportDetail({ id }: { id: string }) {
                 variant="outline"
                 disabled={busy}
                 onClick={() => {
-                  setDrafts(null);
+                  clearDraft();
                   setIntent(null);
                   save.reset();
                   setInvalid(undefined);

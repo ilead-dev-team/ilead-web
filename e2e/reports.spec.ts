@@ -222,27 +222,20 @@ test("custom sections and generated refreshes preserve progress protections and 
   );
   await page.route(`**/api/v1/reports/${id}/sections`, (r) => {
     const sections = r.request().postDataJSON().sections;
-    expect(sections).toHaveLength(4);
-    expect(sections[3].id).toBeUndefined();
-    expect(sections[2].content.items[0].text).toBe("Updated reflection");
-    report.sections[2]!.content = sections[2].content;
-    expect(sections[3].content).toEqual({
-      columns: ["Column", "Outcome"],
-      rows: [["Reflection", "Improved focus"]],
-    });
     report = {
       ...report,
-      sections: [
-        ...report.sections,
-        {
-          ...sections[3],
-          id: otherId,
-          key: null,
-          isMandatory: false,
-          autoSource: "NONE",
-          position: 4,
-        },
-      ],
+      sections: sections.map(
+        (input: (typeof report.sections)[number], index: number) => ({
+          ...(report.sections.find((section) => section.id === input.id) ?? {
+            key: null,
+            isMandatory: false,
+            autoSource: "NONE",
+          }),
+          ...input,
+          id: input.id ?? otherId,
+          position: index + 1,
+        }),
+      ),
     };
     return r.fulfill({ json: { data: report } });
   });
@@ -285,6 +278,14 @@ test("custom sections and generated refreshes preserve progress protections and 
   ).toBeDisabled();
   await page.getByRole("button", { name: "Save report", exact: true }).click();
   await expect(page.getByText("Report saved.", { exact: true })).toBeVisible();
+  expect(report.sections).toHaveLength(4);
+  expect(report.sections[2]!.content).toEqual({
+    items: [{ lead: "Reflection", text: "Updated reflection" }],
+  });
+  expect(report.sections[3]!.content).toEqual({
+    columns: ["Column", "Outcome"],
+    rows: [["Reflection", "Improved focus"]],
+  });
   await page
     .getByRole("button", { name: "Refresh highlights from session" })
     .click();

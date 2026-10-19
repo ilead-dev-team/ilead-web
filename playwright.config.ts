@@ -13,6 +13,7 @@ export default defineConfig({
     "reports.spec.ts",
     "report-feedback.spec.ts",
     "report-library.spec.ts",
+    "report-autosave.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,

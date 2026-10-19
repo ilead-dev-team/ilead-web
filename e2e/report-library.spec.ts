@@ -277,6 +277,14 @@ test("save-to-library retains failed metadata and creates only after opt-in; rep
       json: { data: { ...template, isPreselected: malformed } },
     });
   });
+  await page.route(`**/api/v1/reports/${id}/sections`, (r) =>
+    r.fulfill({
+      status: 503,
+      json: {
+        error: { code: "UNAVAILABLE", message: "Test save unavailable" },
+      },
+    }),
+  );
   await open(page);
   await page.getByLabel("Section title", { exact: true }).fill("Reflection");
   await page
@@ -350,6 +358,14 @@ test("one-off custom section makes no library write and missing library options 
     if (r.request().method() !== "GET") writes++;
     return r.fulfill({ json: result([], 1, 0) });
   });
+  await page.route(`**/api/v1/reports/${id}/sections`, (r) =>
+    r.fulfill({
+      status: 503,
+      json: {
+        error: { code: "UNAVAILABLE", message: "Test save unavailable" },
+      },
+    }),
+  );
   await open(page);
   await page
     .getByLabel("Section title", { exact: true })
