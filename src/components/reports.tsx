@@ -257,11 +257,30 @@ export function Reports() {
   );
 }
 type Action =
-  "confirm" | "reopen" | "send" | "takeover" | "progress" | "highlights";
+  | "confirm"
+  | "reopen"
+  | "send"
+  | "takeover"
+  | "progress"
+  | "highlights"
+  | "archive"
+  | "unarchive";
 const actionCopy: Record<
   Action,
   { title: string; confirm: string; description: string }
 > = {
+  archive: {
+    title: "Archive report",
+    confirm: "Confirm archive",
+    description:
+      "Move this sent report out of the active report list. It remains available through Archived reports, with its sent versions and Word downloads. Editing and discussion changes are blocked until it is unarchived. The report is not deleted. Post or copy any unsent discussion messages first.",
+  },
+  unarchive: {
+    title: "Unarchive report",
+    confirm: "Confirm unarchive",
+    description:
+      "Return this report to the active report list. Its status, authorship and sent versions stay unchanged; unarchiving does not reopen or send it.",
+  },
   confirm: {
     title: "Confirm report",
     confirm: "Confirm report now",
@@ -364,6 +383,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
     setNotice(message);
     await cache.invalidateQueries({ queryKey: ["reports", "list"] });
     await cache.invalidateQueries({ queryKey: ["sessions"] });
+    await cache.invalidateQueries({ queryKey: ["dashboard"] });
   };
   const save = useMutation({
     mutationFn: async (snapshot: ReportSection[]) => {
@@ -419,7 +439,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
   });
   const transition = useMutation({
     mutationFn: async (action: Action) => {
-      if (!report || !canReportAction(report, user, action))
+      if (dirty || !report || !canReportAction(report, user, action))
         throw new Error("This report action is no longer available.");
       const regenerate = action === "progress" || action === "highlights";
       const result = parseReport(
@@ -431,12 +451,24 @@ function ReportDetailWorkspace({ id }: { id: string }) {
         ).data,
         user.role,
       );
-      const expected =
-        action === "confirm" ? "FINAL" : action === "send" ? "SENT" : "DRAFT";
+      const archival = action === "archive" || action === "unarchive";
+      const expected = archival
+        ? report.status
+        : action === "confirm"
+          ? "FINAL"
+          : action === "send"
+            ? "SENT"
+            : "DRAFT";
       if (
         result.id !== id ||
         result.status !== expected ||
-        (action === "takeover" && result.author.id !== user.id)
+        (action === "takeover" && result.author.id !== user.id) ||
+        (archival &&
+          (result.author.id !== report.author.id ||
+            result.version !== report.version ||
+            (action === "archive"
+              ? !result.archivedAt || result.openChangeRequests !== 0
+              : result.archivedAt !== null)))
       )
         throw new Error("Unexpected report acknowledgement");
       return result;
@@ -444,7 +476,13 @@ function ReportDetailWorkspace({ id }: { id: string }) {
     onSuccess: (result, action) =>
       accept(
         result,
-        action === "send" ? "Report sent to Sponsors." : "Report updated.",
+        action === "send"
+          ? "Report sent to Sponsors."
+          : action === "archive"
+            ? "Report archived."
+            : action === "unarchive"
+              ? "Report unarchived."
+              : "Report updated.",
       ),
   });
   const createTemplate = useMutation({
@@ -881,6 +919,45 @@ function ReportDetailWorkspace({ id }: { id: string }) {
               )}
             </div>
           )}
+          {user.role === "COORDINATOR" &&
+            (report.archivedAt ||
+              ["SENT", "CHANGES_REQUESTED"].includes(report.status)) && (
+              <section
+                className="my-5 grid gap-3 rounded-xl border border-border p-5"
+                aria-labelledby="report-archive-heading"
+              >
+                <h2 id="report-archive-heading">Report archive</h2>
+                <p>
+                  {report.archivedAt
+                    ? "This report is archived. Reading, sent history and Word downloads remain available."
+                    : "Archive completed sent reports to keep the active list focused. Reports are retained, not deleted."}
+                </p>
+                {!report.archivedAt &&
+                  !canReportAction(report, user, "archive") && (
+                    <p>
+                      Only sent reports without open change requests can be
+                      archived. Resolve requests and finish any rework first.
+                    </p>
+                  )}
+                <Button
+                  variant="outline"
+                  disabled={
+                    dirty ||
+                    busy ||
+                    !canReportAction(
+                      report,
+                      user,
+                      report.archivedAt ? "unarchive" : "archive",
+                    )
+                  }
+                  onClick={() =>
+                    choose(report.archivedAt ? "unarchive" : "archive")
+                  }
+                >
+                  {report.archivedAt ? "Unarchive report" : "Archive report"}
+                </Button>
+              </section>
+            )}
           {intent && canReportAction(report, user, intent) && (
             <div
               role="group"

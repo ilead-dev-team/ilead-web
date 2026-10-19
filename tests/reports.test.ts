@@ -157,3 +157,44 @@ test("report actions respect ownership, state and archive locks", () => {
     false,
   );
 });
+
+test("any Coordinator can archive only eligible sent reports, independently of authorship", () => {
+  const current = parseReport({ ...report, status: "SENT" }, "COORDINATOR");
+  const actor = { id: progressId, role: "COORDINATOR" };
+  assert.equal(canReportAction(current, actor, "archive"), true);
+  for (const status of ["DRAFT", "FINAL", "CHANGES_REQUESTED"] as const)
+    assert.equal(
+      canReportAction({ ...current, status }, actor, "archive"),
+      false,
+    );
+  assert.equal(
+    canReportAction({ ...current, openChangeRequests: 1 }, actor, "archive"),
+    false,
+  );
+  for (const role of ["SPONSOR", "FACILITATOR"])
+    assert.equal(canReportAction(current, { id, role }, "archive"), false);
+});
+test("unarchive requires Coordinator role and an archived report while all editing remains locked", () => {
+  const current = parseReport(
+      { ...report, status: "SENT", archivedAt: "2026-10-19T10:00:00Z" },
+      "COORDINATOR",
+    ),
+    actor = { id: progressId, role: "COORDINATOR" };
+  assert.equal(canReportAction(current, actor, "unarchive"), true);
+  assert.equal(
+    canReportAction({ ...current, archivedAt: null }, actor, "unarchive"),
+    false,
+  );
+  for (const action of [
+    "archive",
+    "confirm",
+    "send",
+    "reopen",
+    "takeover",
+    "progress",
+    "highlights",
+  ])
+    assert.equal(canReportAction(current, actor, action), false);
+  for (const role of ["SPONSOR", "FACILITATOR"])
+    assert.equal(canReportAction(current, { id, role }, "unarchive"), false);
+});
