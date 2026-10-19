@@ -10,6 +10,7 @@ export default defineConfig({
     "sessions.spec.ts",
     "entries.spec.ts",
     "calendar.spec.ts",
+    "reports.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,

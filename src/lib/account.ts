@@ -73,7 +73,8 @@ export function permittedNext(next: string | null, user: User) {
         : ["/dashboard", "/curriculum"];
   return allowed.includes(path!) ||
     roundtablePath(path!, user.role) ||
-    sessionPath(path!, user.role)
+    sessionPath(path!, user.role) ||
+    reportPath(path!, user.role)
     ? next
     : base;
 }
@@ -95,6 +96,16 @@ export function sessionPath(path: string, role: string) {
     (path === "/sessions" ||
       path === "/sessions/new" ||
       /^\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        path,
+      ))
+  );
+}
+
+export function reportPath(path: string, role: string) {
+  return (
+    ["COORDINATOR", "SPONSOR"].includes(role) &&
+    (path === "/reports" ||
+      /^\/reports\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
         path,
       ))
   );
