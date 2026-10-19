@@ -20,6 +20,7 @@ import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
 import { ReportContent } from "./report-content";
 import { ReportFeedback } from "./report-feedback";
+import { ReportHistory } from "./report-history";
 import { ReportLibrary } from "./report-library";
 import { newReportSection, parseCreatedTemplate } from "@/lib/report-library";
 import { ReportSectionEditor } from "./report-section-editor";
@@ -805,6 +806,11 @@ function ReportDetailWorkspace({ id }: { id: string }) {
               </Button>
             </div>
           )}
+          <ReportHistory
+            key={`${id}-${user.id}-${user.role}`}
+            report={report}
+            blocked={dirty || busy}
+          />
           <ReportFeedback report={report} />
           {invalid && (
             <p role="alert" className="field-error">

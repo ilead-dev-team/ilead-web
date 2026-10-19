@@ -1,5 +1,11 @@
 import type { ReportSection } from "@/lib/reports";
-export function ReportContent({ sections }: { sections: ReportSection[] }) {
+export function ReportContent({
+  sections,
+  context,
+}: {
+  sections: ReportSection[];
+  context?: string;
+}) {
   return (
     <div className="my-5 grid gap-6">
       {sections.map((section) => (
@@ -23,7 +29,7 @@ export function ReportContent({ sections }: { sections: ReportSection[] }) {
               className="overflow-x-auto"
               tabIndex={0}
               role="region"
-              aria-label={`${section.title} table`}
+              aria-label={`${context ? `${context} · ` : ""}${section.title} table`}
             >
               <table className="w-full border-collapse text-left text-sm">
                 <thead>

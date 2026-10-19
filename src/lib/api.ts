@@ -12,6 +12,7 @@ export class ApiError extends Error {
 type Options = Omit<RequestInit, "body"> & {
   body?: unknown;
   public?: boolean;
+  responseType?: "blob";
   onResponse?: (response: Response) => void;
 };
 export function createApiClient(
@@ -19,7 +20,14 @@ export function createApiClient(
 ) {
   let refreshing: Promise<void> | undefined;
   async function raw(path: string, options: Options = {}) {
-    const { body, public: _public, onResponse: _onResponse, ...init } = options;
+    const {
+      body,
+      public: _public,
+      onResponse: _onResponse,
+      responseType: _responseType,
+      ...init
+    } = options;
+    void _responseType;
     void _public;
     void _onResponse;
     return transport(`/api/v1${path}`, {
@@ -102,7 +110,9 @@ export function createApiClient(
     options.onResponse?.(response);
     return response.status === 204
       ? (undefined as T)
-      : ((await response.json()) as T);
+      : options.responseType === "blob"
+        ? ((await response.blob()) as T)
+        : ((await response.json()) as T);
   };
 }
 export const api = createApiClient();
