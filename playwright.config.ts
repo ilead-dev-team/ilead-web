@@ -11,6 +11,7 @@ export default defineConfig({
     "entries.spec.ts",
     "calendar.spec.ts",
     "reports.spec.ts",
+    "report-feedback.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
