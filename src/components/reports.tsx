@@ -20,6 +20,8 @@ import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
 import { ReportContent } from "./report-content";
 import { ReportFeedback } from "./report-feedback";
+import { ReportLibrary } from "./report-library";
+import { newReportSection, parseCreatedTemplate } from "@/lib/report-library";
 import { ReportSectionEditor } from "./report-section-editor";
 
 export function SessionReport({
@@ -301,7 +303,8 @@ export function ReportDetail({ id }: { id: string }) {
     [notice, setNotice] = useState(""),
     [intent, setIntent] = useState<Action | null>(null),
     [customTitle, setCustomTitle] = useState(""),
-    [customKind, setCustomKind] = useState("TEXT");
+    [customKind, setCustomKind] = useState("TEXT"),
+    [saveToLibrary, setSaveToLibrary] = useState(false);
   const query = useQuery({
     queryKey: key,
     staleTime: 0,
@@ -387,7 +390,43 @@ export function ReportDetail({ id }: { id: string }) {
         action === "send" ? "Report sent to Sponsors." : "Report updated.",
       ),
   });
-  const busy = save.isPending || transition.isPending;
+  const createTemplate = useMutation({
+    mutationFn: async ({ title, kind }: { title: string; kind: string }) => {
+      if (!editable || sections.length >= 30)
+        throw new Error("Section creation unavailable");
+      return parseCreatedTemplate(
+        (
+          await api<{ data: unknown }>("/section-templates", {
+            method: "POST",
+            body: { title, kind },
+          })
+        ).data,
+        title,
+        kind,
+      );
+    },
+    onSuccess: async (template) => {
+      change([
+        ...sections,
+        newReportSection(
+          template.title,
+          template.kind,
+          sections.length + 1,
+          template,
+        ),
+      ]);
+      setCustomTitle("");
+      setSaveToLibrary(false);
+      setNotice(
+        "Section structure saved to the library and added to this draft. Save the report to persist its content.",
+      );
+      await cache.invalidateQueries({
+        queryKey: ["configuration", "sections"],
+      });
+    },
+  });
+  const busy =
+    save.isPending || transition.isPending || createTemplate.isPending;
   const change = (next: ReportSection[]) => {
     setDrafts(next);
     setNotice("");
@@ -503,6 +542,12 @@ export function ReportDetail({ id }: { id: string }) {
                   </article>
                 ))}
               </div>
+              <ReportLibrary
+                key={`${id}-${user.id}-${user.role}`}
+                sections={sections}
+                disabled={busy}
+                add={(section) => change([...sections, section])}
+              />
               <form
                 className="my-5 grid gap-4 rounded-xl border border-border p-5"
                 noValidate
@@ -518,26 +563,25 @@ export function ReportDetail({ id }: { id: string }) {
                     );
                     return;
                   }
-                  const base = {
-                    id: `new-${crypto.randomUUID()}`,
-                    key: null,
-                    title: customTitle.trim(),
-                    isMandatory: false,
-                    autoSource: "NONE" as const,
-                    position: sections.length + 1,
-                  };
-                  const section: ReportSection =
-                    customKind === "BULLETS"
-                      ? { ...base, kind: "BULLETS", content: { items: [] } }
-                      : customKind === "TABLE"
-                        ? {
-                            ...base,
-                            kind: "TABLE",
-                            content: { columns: ["Column"], rows: [] },
-                          }
-                        : { ...base, kind: "TEXT", content: { text: "" } };
-                  change([...sections, section]);
-                  setCustomTitle("");
+                  setInvalid(undefined);
+                  setNotice("");
+                  createTemplate.reset();
+                  if (saveToLibrary) {
+                    createTemplate.mutate({
+                      title: customTitle.trim(),
+                      kind: customKind,
+                    });
+                  } else {
+                    change([
+                      ...sections,
+                      newReportSection(
+                        customTitle,
+                        customKind,
+                        sections.length + 1,
+                      ),
+                    ]);
+                    setCustomTitle("");
+                  }
                 }}
               >
                 <h2>Add a one-off section</h2>
@@ -562,6 +606,26 @@ export function ReportDetail({ id }: { id: string }) {
                     <option value="TABLE">Table</option>
                   </Select>
                 </Field>
+                <label className="flex min-h-11 items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={saveToLibrary}
+                    disabled={busy}
+                    onChange={(event) => {
+                      setSaveToLibrary(event.target.checked);
+                      createTemplate.reset();
+                    }}
+                  />
+                  Save section structure to library
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  The library saves the title and section type, not report text.
+                  New custom templates are available for selection in future
+                  reports and are never preselected. Creating a library template
+                  is separate from saving this report.
+                </p>
+                <Feedback error={createTemplate.error} />
+                <Pending active={createTemplate.isPending} />
                 <Button disabled={busy || sections.length >= 30}>
                   Add custom section
                 </Button>
