@@ -65,6 +65,8 @@ export function permittedNext(next: string | null, user: User) {
             "/dashboard",
             "/mailbox",
             "/people/recovery",
+            "/settings/activities",
+            "/settings/sections",
             "/issues",
             "/curriculum",
           ]

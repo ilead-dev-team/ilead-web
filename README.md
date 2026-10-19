@@ -74,3 +74,15 @@ The screen provides loading, retry, field validation and per-lesson save feedbac
 Coordinators and owning Facilitators can edit name, slogan and class only; progress fields are never sent. Backend similarity checks remain authoritative. Failed saves retain input and successful validated acknowledgements refresh roundtable caches. Coordinator trash actions require confirmation, keep the name reserved and detach the Facilitator; `/roundtables/trash` displays the server restore deadline. Restore failures remain visible, and the backend enforces the 30-day window and original-Facilitator eligibility. Lifecycle success refreshes roundtable and dashboard caches. There is no permanent-delete control or automatic network retry.
 
 Checks for this slice: 17 logic tests and 19 browser cases, including filter paging, trash confirmation/cancellation, blocked/successful restore, own detail editing with failed-name preservation, baseline/session history, light/dark accessibility, mobile overflow and Sponsor read-only/trash restrictions. Screenshot inspected. Browser API responses are explicit substitutes; real PostgreSQL, provider and deployment acceptance remain pending. No Docker or live database writes. Session-entry screens remain the next W2.08 slice.
+
+## W2.08 activity and section settings
+
+Coordinator-only `/settings/activities` and `/settings/sections` connect to the existing Express configuration endpoints. Activity types support creation, renaming, numeric positions and active/inactive state; historical records are retained. Custom sections support title/kind on creation, later renaming and archive/restore through the availability checkbox. Kind and system flags are read-only after creation, and system sections have no archive control. The backend still enforces roles, uniqueness and protected-system rules.
+
+Lists request 20 records per page, with state filters that reset paging. Input limits match backend constraints. Failed requests retain input; writes validate the returned record before showing success and invalidate account-scoped list caches. New activity/section forms clear only after acknowledgement. No optimistic writes or automatic network retries are used.
+
+Verification includes 16 logic tests and 19 browser cases, including duplicate errors, activity edits/position/deactivation, create, custom section archive/restore, system protections, filter paging and denied Sponsor routes with zero settings requests. Activity light/dark axe and mobile overflow checks and section light axe checks use explicit API substitutes. Screenshots were visually inspected. Real database acceptance, roundtable management and session-entry screens remain pending. No Docker or live database writes.
+
+Formatting for all files changed in this settings slice passes. The optional repository-wide Prettier check flags 41 unchanged baseline files; those unrelated files were not reformatted.
+
+After integrating the merged settings slice, the combined suite contains 19 logic tests and 22 browser cases. Both settings and roundtable routes remain included.

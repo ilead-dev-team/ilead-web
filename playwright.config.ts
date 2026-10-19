@@ -6,6 +6,7 @@ export default defineConfig({
     "issues.spec.ts",
     "curriculum.spec.ts",
     "roundtables.spec.ts",
+    "configuration.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
