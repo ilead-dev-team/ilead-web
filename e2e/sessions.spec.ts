@@ -34,6 +34,14 @@ async function auth(
   await page.route("**/api/v1/curriculum", (r) =>
     r.fulfill({ status: 503, json: {} }),
   );
+  await page.route("**/api/v1/academic-years?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [],
+        meta: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      },
+    }),
+  );
   await page.route("**/api/v1/activity-types?**", (r) =>
     r.fulfill({
       json: {

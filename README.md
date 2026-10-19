@@ -108,3 +108,13 @@ Drafts live only in memory for the mounted session page, not browser storage. Pa
 Checks include 26 logic tests and 30 browser cases after integration, with entry-specific pagination/filter draft preservation, failed atomic saves, touched-row payloads, non-next review, structured row errors, malformed acknowledgements, server warnings, cancelled-session exclusion, light/dark axe, mobile overflow and no duplicate React keys. Screenshot inspected. Browser APIs are explicit substitutes. No Docker or live database writes. Academic-year/term filters and report building remain next; real PostgreSQL/provider/deployment acceptance remains pending.
 
 Hosted CI caught an existing shared-button contrast failure during the immediate switch to dark mode: color interpolation temporarily produced a 3.14:1 contrast ratio on Log out. Shared buttons now change theme colors immediately, avoiding unreadable intermediate foreground/background combinations. Accessibility assertions remain enabled.
+
+## Session academic-year and term filters
+
+The Coordinator session list reads configured academic years and their terms from the existing academic API. Calendar choices load across all 20-record pages and validate IDs, dates and term numbers before display. Choosing a year exposes only its terms, clears the previous term and resets session paging. Changing a term resets paging too. Clear calendar filters removes only year/term selections; status and applied date filters remain. Current-year labels are informational, with All academic years as the initial scope.
+
+Calendar lookup has loading, failure/retry and empty-setup feedback. Session browsing remains available when calendar lookup fails. Failed refreshes preserve existing choices rather than silently broadening the filter. Requests carry cancellation signals, so leaving the view can cancel an unfinished lookup. No calendar records are created or modified by these filters.
+
+Verification covers paginated calendar lookup and abort propagation, malformed response rejection, parent-year/term scoping, paging resets, clear-filter semantics, failed lookup/retry, no invented options for empty calendars, light/dark accessibility and mobile overflow. Browser API responses are explicit substitutes, not real PostgreSQL acceptance. No Docker or live database writes. Report building remains next.
+
+Calendar-filter validation: all 28 logic tests and 33 browser cases passed locally, along with lint, type checking and changed-file formatting. Mobile screenshot inspected.
