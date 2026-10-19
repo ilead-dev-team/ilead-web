@@ -61,7 +61,13 @@ export function permittedNext(next: string | null, user: User) {
     user.role === "FACILITATOR"
       ? ["/my-roundtable", "/issues"]
       : user.role === "COORDINATOR"
-        ? ["/dashboard", "/mailbox", "/people/recovery", "/issues"]
-        : ["/dashboard"];
+        ? [
+            "/dashboard",
+            "/mailbox",
+            "/people/recovery",
+            "/issues",
+            "/curriculum",
+          ]
+        : ["/dashboard", "/curriculum"];
   return allowed.includes(path!) ? next : base;
 }

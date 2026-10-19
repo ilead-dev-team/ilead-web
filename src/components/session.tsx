@@ -32,6 +32,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
           (user.hasRoundtable ? "/my-roundtable" : "/register-roundtable") ||
         (user.hasRoundtable && path === "/issues")
       : path === "/dashboard" ||
+        path === "/curriculum" ||
         (user.role === "COORDINATOR" &&
           [
             "/mailbox",
