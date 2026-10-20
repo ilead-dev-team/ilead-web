@@ -289,9 +289,14 @@ test("mailbox disconnect exposes unconfirmed provider revocation", async ({
   await page
     .getByRole("button", { name: "Confirm disconnect", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText(
-    "could not be confirmed",
-  );
+  await expect(
+    page.getByRole("dialog", { name: "Disconnect mailbox?", exact: true }),
+  ).not.toBeVisible();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Mailbox disconnected locally." }),
+  ).toContainText("could not be confirmed");
   await expect(
     page.getByRole("link", { name: "Google account connections" }),
   ).toBeVisible();
