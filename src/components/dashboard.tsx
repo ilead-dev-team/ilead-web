@@ -27,6 +27,7 @@ import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
 import styles from "./dashboard.module.css";
+import { Reminders } from "./notifications";
 const classes: Record<string, string> = {
   YEAR_1: "Year 1",
   YEAR_2: "Year 2",
@@ -655,6 +656,7 @@ export function Dashboard() {
           />
         </>
       )}
+      {user.role === "COORDINATOR" && <Reminders />}
     </div>
   );
 }
