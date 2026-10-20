@@ -59,6 +59,7 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
             <>
               <Link href="/sessions">Sessions</Link>
               <Link href="/settings/activities">Activity types</Link>
+              <Link href="/settings/academic-years">Academic years</Link>
               <Link href="/settings/sections">Section library</Link>
               <Link href="/mailbox">Connected mailbox</Link>
               <Link href="/people/recovery">Account recovery</Link>

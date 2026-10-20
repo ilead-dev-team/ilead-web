@@ -74,6 +74,7 @@ export function permittedNext(next: string | null, user: User) {
             "/people",
             "/settings/activities",
             "/settings/sections",
+            "/settings/academic-years",
             "/issues",
             "/curriculum",
           ]
