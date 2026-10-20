@@ -48,6 +48,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
             "/mailbox",
             "/mailbox/callback",
             "/people/recovery",
+            "/people",
             "/settings/activities",
             "/settings/sections",
             "/issues",
