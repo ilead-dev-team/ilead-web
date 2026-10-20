@@ -3,6 +3,7 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: [
     "account.spec.ts",
+    "account-shell.spec.ts",
     "dashboard.spec.ts",
     "people.spec.ts",
     "notifications.spec.ts",

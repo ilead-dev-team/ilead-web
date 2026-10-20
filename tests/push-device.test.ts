@@ -10,6 +10,7 @@ import {
   enablePush,
   disablePush,
   logoutWithPush,
+  clearLocalPush,
   type PushPort,
 } from "../src/lib/push-device.js";
 const user = "11111111-1111-4111-8111-111111111111",
@@ -22,6 +23,29 @@ const device = {
 const pair = createECDH("prime256v1");
 pair.generateKeys();
 const key = pair.getPublicKey().toString("base64url");
+test("post-password cleanup stops the local endpoint without an authenticated request", async () => {
+  const f = fixture();
+  await enablePush(user, "Laptop", f.port, f.transport);
+  f.events.length = 0;
+  await clearLocalPush(f.port);
+  assert.equal(f.hasSubscription(), false);
+  assert.deepEqual(f.events, ["unsubscribe", "close"]);
+  assert.equal(f.values.size, 0);
+});
+test("failed local cleanup retains binding for a retry", async () => {
+  const f = fixture();
+  await enablePush(user, "Laptop", f.port, f.transport);
+  const port = {
+    ...f.port,
+    registration: async () => {
+      throw new Error("Browser unavailable");
+    },
+  };
+  await assert.rejects(clearLocalPush(port), /Browser unavailable/);
+  assert.equal(f.values.size, 1);
+  await clearLocalPush(f.port);
+  assert.equal(f.values.size, 0);
+});
 function fixture() {
   const values = new Map<string, string>(),
     events: string[] = [],

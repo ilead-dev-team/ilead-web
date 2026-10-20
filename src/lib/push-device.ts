@@ -306,3 +306,10 @@ export async function logoutWithPush(
     port.storage.removeItem(storageKey);
   } catch {}
 }
+
+// Cookies are already cleared after a password change. Only stop this browser's
+// endpoint; no refresh, logout or authenticated subscription request is possible.
+export async function clearLocalPush(port: PushPort = browserPushPort()) {
+  if (port.supported) await localUnsubscribe(await port.registration());
+  port.storage.removeItem(storageKey);
+}

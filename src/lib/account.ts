@@ -28,6 +28,16 @@ export const resetSchema = z
     path: ["confirmation"],
     message: "The passwords do not match.",
   });
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password.").max(256),
+    newPassword: password,
+    confirmation: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmation, {
+    path: ["confirmation"],
+    message: "The passwords do not match.",
+  });
 export const inviteSchema = z
   .object({
     name: z.string().trim().min(1, "Enter your name.").max(100),
