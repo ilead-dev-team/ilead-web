@@ -8,60 +8,6 @@ import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Field, Input, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
-export function Dashboard() {
-  const user = useSession();
-  const query = useQuery({
-    queryKey: ["dashboard", user.id],
-    queryFn: () =>
-      api<{
-        data: {
-          academicYear: { label: string };
-          cards: Record<string, number>;
-        };
-      }>("/dashboard/summary"),
-  });
-  const labels = {
-    activeRoundtables: "Active roundtables",
-    sessionsHeld: "Sessions held",
-    staleRoundtables: "Stale roundtables",
-    unregisteredFacilitators: "Unregistered Facilitators",
-  };
-  return (
-    <>
-      <h1>Welcome back, {user.name}.</h1>
-      <p className="text-muted-foreground">
-        A clear view of the program, one session at a time.
-      </p>
-      <Pending active={query.isPending} />
-      {query.isError && (
-        <>
-          <Feedback error={query.error} />
-          <Button variant="outline" onClick={() => query.refetch()}>
-            Try again
-          </Button>
-        </>
-      )}
-      {query.data && (
-        <>
-          <p className="mt-6 text-sm">{query.data.data.academicYear.label}</p>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Object.entries(labels).map(([key, label]) => (
-              <div
-                className="rounded-lg border border-border bg-card p-6"
-                key={key}
-              >
-                <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="mt-3 text-3xl font-semibold">
-                  {query.data.data.cards[key]}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </>
-      )}
-    </>
-  );
-}
 const registration = z.object({
   name: z.string().trim().min(3).max(40),
   slogan: z.string().trim().min(3).max(80),
