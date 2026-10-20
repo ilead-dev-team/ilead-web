@@ -6,6 +6,7 @@ export default defineConfig({
     "dashboard.spec.ts",
     "people.spec.ts",
     "notifications.spec.ts",
+    "push-devices.spec.ts",
     "issues.spec.ts",
     "curriculum.spec.ts",
     "roundtables.spec.ts",

@@ -28,6 +28,18 @@ const config: NextConfig = {
   async headers() {
     return [
       {
+        source: "/push-worker.js",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+          { key: "Service-Worker-Allowed", value: "/" },
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'none'; script-src 'self'; img-src 'self'; connect-src 'self'",
+          },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },

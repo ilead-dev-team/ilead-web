@@ -31,6 +31,7 @@ import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Field, Select } from "./ui/field";
 import { Feedback, Pending } from "./account/feedback";
+import { PushDevices } from "./push-devices";
 function useNotificationActions() {
   const user = useSession(),
     cache = useQueryClient();
@@ -515,6 +516,7 @@ export function NotificationInbox() {
         )}
       </section>
       <Reminders />
+      <PushDevices />
     </div>
   );
 }
