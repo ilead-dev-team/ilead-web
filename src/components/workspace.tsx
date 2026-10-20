@@ -3,14 +3,23 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Brand } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
 import { Feedback } from "./account/feedback";
 import { useSession } from "./session";
 import { NotificationBell } from "./notifications";
+import { PushDeviceProvider, usePushDevice } from "./push-devices";
 export function Workspace({ children }: { children: ReactNode }) {
+  const user = useSession();
+  return (
+    <PushDeviceProvider key={user.id}>
+      <WorkspaceContent>{children}</WorkspaceContent>
+    </PushDeviceProvider>
+  );
+}
+function WorkspaceContent({ children }: { children: ReactNode }) {
+  const push = usePushDevice();
   const user = useSession(),
     router = useRouter(),
     cache = useQueryClient();
@@ -63,12 +72,12 @@ export function Workspace({ children }: { children: ReactNode }) {
           <NotificationBell key={`${user.id}:${user.role}`} />
           <Button
             variant="outline"
-            disabled={pending}
+            disabled={pending || push.busy}
             onClick={async () => {
               setPending(true);
               setError(undefined);
               try {
-                await api("/auth/logout", { method: "POST", public: true });
+                await push.logout();
                 cache.clear();
                 router.replace("/login");
               } catch (e) {

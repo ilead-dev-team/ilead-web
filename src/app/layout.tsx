@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "The iLead leadership program at Rwanda Coding Academy.",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
+  appleWebApp: { capable: true, title: "iLead" },
+  icons: { apple: "/brand/push-192.png" },
 };
 const theme = `(function(){try{var d=localStorage.getItem('ilead-theme')==='dark';document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`;
 export default function RootLayout({
