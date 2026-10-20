@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { summary } from "../tests/fixtures/dashboard";
 const user = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "Test Coordinator",
@@ -69,15 +70,7 @@ test("login displays server failure and keeps typed input; success routes by cur
   await page.route("**/api/v1/dashboard/summary", (r) =>
     r.fulfill({
       json: {
-        data: {
-          academicYear: { label: "Test year" },
-          cards: {
-            activeRoundtables: 0,
-            sessionsHeld: 0,
-            staleRoundtables: 0,
-            unregisteredFacilitators: 0,
-          },
-        },
+        data: summary(),
       },
     }),
   );
