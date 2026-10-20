@@ -370,10 +370,10 @@ function Invitations() {
       }
       await cache.invalidateQueries({ queryKey: ["invitations", user.id] });
     },
-    onSettled: (_value, error) => {
-      if (!error) restoreFocus();
-    },
   });
+  useEffect(() => {
+    if (action.isSuccess && !action.isPending && !review) restoreFocus();
+  }, [action.isSuccess, action.isPending, review, restoreFocus]);
   const start = (value: Action) => {
     opener.current = document.activeElement as HTMLElement | null;
     action.reset();

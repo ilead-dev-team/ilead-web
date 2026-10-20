@@ -52,6 +52,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
               "/people",
               "/settings/activities",
               "/settings/sections",
+              "/settings/academic-years",
               "/issues",
             ].includes(path))));
   useEffect(() => {
