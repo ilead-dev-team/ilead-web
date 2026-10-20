@@ -52,6 +52,7 @@ export function Workspace({ children }: { children: ReactNode }) {
               <Link href="/settings/sections">Section library</Link>
               <Link href="/mailbox">Connected mailbox</Link>
               <Link href="/people/recovery">Account recovery</Link>
+              <Link href="/people">People</Link>
             </>
           )}
         </nav>

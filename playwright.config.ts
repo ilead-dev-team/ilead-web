@@ -4,6 +4,7 @@ export default defineConfig({
   testMatch: [
     "account.spec.ts",
     "dashboard.spec.ts",
+    "people.spec.ts",
     "issues.spec.ts",
     "curriculum.spec.ts",
     "roundtables.spec.ts",
