@@ -160,11 +160,25 @@ test("invitation locks email/role, requires class and routes Facilitators to reg
     `**/api/v1/invitations/by-token/${token}/accept`,
     async (r) => {
       body = r.request().postDataJSON();
-      await r.fulfill({ json: { data: { user } } });
+      await r.fulfill({
+        json: {
+          data: {
+            user: {
+              ...user,
+              email: "invited@example.test",
+              role: "FACILITATOR",
+            },
+          },
+        },
+      });
     },
   );
   await page.route("**/api/v1/auth/me", (r) =>
-    r.fulfill({ json: { data: { ...user, role: "FACILITATOR" } } }),
+    r.fulfill({
+      json: {
+        data: { ...user, role: "FACILITATOR", email: "invited@example.test" },
+      },
+    }),
   );
   await page.route("**/api/v1/curriculum", (r) =>
     r.fulfill({ json: { data: { levels: [] } } }),
@@ -263,15 +277,18 @@ test("mailbox disconnect exposes unconfirmed provider revocation", async ({
         json: {
           data: {
             connected,
+            provider: "gmail",
             address: "sender@example.test",
             reconnectRequired: false,
           },
         },
       });
   });
-  page.on("dialog", (d) => d.accept());
   await page.goto("/mailbox");
   await page.getByRole("button", { name: "Disconnect mailbox" }).click();
+  await page
+    .getByRole("button", { name: "Confirm disconnect", exact: true })
+    .click();
   await expect(page.getByRole("status")).toContainText(
     "could not be confirmed",
   );

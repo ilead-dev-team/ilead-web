@@ -4,6 +4,7 @@ export default defineConfig({
   testMatch: [
     "account.spec.ts",
     "account-shell.spec.ts",
+    "account-delivery.spec.ts",
     "dashboard.spec.ts",
     "people.spec.ts",
     "notifications.spec.ts",
