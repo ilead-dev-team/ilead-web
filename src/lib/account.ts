@@ -49,7 +49,12 @@ export function destination(user: Pick<User, "role" | "hasRoundtable">) {
 }
 export function permittedNext(next: string | null, user: User) {
   const base = destination(user);
-  if (user.role === "FACILITATOR" && !user.hasRoundtable) return base;
+  if (
+    user.role === "FACILITATOR" &&
+    !user.hasRoundtable &&
+    next?.split("?")[0] !== "/notifications"
+  )
+    return base;
   if (
     !next ||
     !/^\/[a-z0-9/-]+(?:\?[a-zA-Z0-9_=&-]*)?$/.test(next) ||
@@ -57,6 +62,7 @@ export function permittedNext(next: string | null, user: User) {
   )
     return base;
   const path = next.split("?")[0];
+  if (path === "/notifications") return next;
   const allowed =
     user.role === "FACILITATOR"
       ? ["/my-roundtable", "/issues"]

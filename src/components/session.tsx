@@ -34,25 +34,26 @@ export function SessionGate({ children }: { children: ReactNode }) {
     session.error instanceof ApiError && session.error.status === 401;
   const allowed =
     user &&
-    (user.role === "FACILITATOR"
-      ? path ===
-          (user.hasRoundtable ? "/my-roundtable" : "/register-roundtable") ||
-        (user.hasRoundtable && path === "/issues")
-      : path === "/dashboard" ||
-        path === "/curriculum" ||
-        roundtablePath(path, user.role) ||
-        sessionPath(path, user.role) ||
-        reportPath(path, user.role) ||
-        (user.role === "COORDINATOR" &&
-          [
-            "/mailbox",
-            "/mailbox/callback",
-            "/people/recovery",
-            "/people",
-            "/settings/activities",
-            "/settings/sections",
-            "/issues",
-          ].includes(path)));
+    (path === "/notifications" ||
+      (user.role === "FACILITATOR"
+        ? path ===
+            (user.hasRoundtable ? "/my-roundtable" : "/register-roundtable") ||
+          (user.hasRoundtable && path === "/issues")
+        : path === "/dashboard" ||
+          path === "/curriculum" ||
+          roundtablePath(path, user.role) ||
+          sessionPath(path, user.role) ||
+          reportPath(path, user.role) ||
+          (user.role === "COORDINATOR" &&
+            [
+              "/mailbox",
+              "/mailbox/callback",
+              "/people/recovery",
+              "/people",
+              "/settings/activities",
+              "/settings/sections",
+              "/issues",
+            ].includes(path))));
   useEffect(() => {
     if (expired) router.replace(`/login?next=${encodeURIComponent(path)}`);
     else if (user && !allowed) router.replace(destination(user));

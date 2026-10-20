@@ -9,6 +9,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
 import { Feedback } from "./account/feedback";
 import { useSession } from "./session";
+import { NotificationBell } from "./notifications";
 export function Workspace({ children }: { children: ReactNode }) {
   const user = useSession(),
     router = useRouter(),
@@ -59,6 +60,7 @@ export function Workspace({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-2">
           <span className="hidden text-sm sm:inline">{user.name}</span>
           <ThemeToggle />
+          <NotificationBell key={`${user.id}:${user.role}`} />
           <Button
             variant="outline"
             disabled={pending}
