@@ -5,6 +5,8 @@ import {
   entryPayload,
   needsConfirmation,
   entryAcknowledgement,
+  parseEntryPage,
+  parseEntryAcknowledgement,
   type EntryRow,
 } from "../src/lib/entries.js";
 import { createApiClient, ApiError } from "../src/lib/api.js";
@@ -23,6 +25,99 @@ const row: EntryRow = {
     title: "Leadership",
   },
 };
+const filters = { page: 1, onlyPending: false, level: "", classYear: "" };
+const meta = { page: 1, pageSize: 20, total: 1, totalPages: 1 };
+test("entry pages reject mismatched pagination, missing/duplicate rows and contradictory attendance", () => {
+  assert.equal(parseEntryPage({ data: [row], meta }, filters).data.length, 1);
+  for (const value of [
+    { data: [row], meta: { ...meta, page: 2 } },
+    { data: [], meta },
+    { data: [row, row], meta: { ...meta, total: 2 } },
+    {
+      data: [
+        {
+          ...row,
+          entry: {
+            met: false,
+            level: "ICHOOSE",
+            lessonId: row.suggested!.lessonId,
+          },
+        },
+      ],
+      meta,
+    },
+    {
+      data: [{ ...row, entry: { met: true, level: null, lessonId: null } }],
+      meta,
+    },
+  ])
+    assert.throws(() => parseEntryPage(value, filters));
+  assert.equal(
+    parseEntryPage(
+      { data: [], meta: { ...meta, page: 2 } },
+      { ...filters, page: 2 },
+    ).data.length,
+    0,
+  );
+});
+test("entry pages must match requested pending, class and level predicates", () => {
+  for (const selection of [
+    { ...filters, classYear: "YEAR_2" },
+    { ...filters, level: "IDO" },
+  ])
+    assert.throws(() => parseEntryPage({ data: [row], meta }, selection));
+  assert.throws(() =>
+    parseEntryPage(
+      {
+        data: [{ ...row, entry: { met: false, level: null, lessonId: null } }],
+        meta,
+      },
+      { ...filters, onlyPending: true },
+    ),
+  );
+});
+test("entry acknowledgements accept idempotent zero changes but refuse unrelated or repeated warnings", () => {
+  const result = { data: { saved: 0, warnings: [], errors: [] } };
+  assert.equal(
+    parseEntryAcknowledgement(result, [row.roundtable.id]).data.saved,
+    0,
+  );
+  const warning = { roundtableId: row.roundtable.id, code: "LESSON_NOT_NEXT" };
+  assert.equal(
+    parseEntryAcknowledgement(
+      { data: { ...result.data, saved: 1, warnings: [warning] } },
+      [row.roundtable.id],
+    ).data.saved,
+    1,
+  );
+  for (const data of [
+    { ...result.data, saved: 2 },
+    { ...result.data, warnings: [warning, warning] },
+    { ...result.data, warnings: [{ ...warning, code: "UNRECOGNIZED" }] },
+    {
+      ...result.data,
+      warnings: [{ ...warning, roundtableId: row.suggested!.lessonId }],
+    },
+  ])
+    assert.throws(() =>
+      parseEntryAcknowledgement({ data }, [row.roundtable.id]),
+    );
+});
+test("entry payloads refuse duplicate roundtables and lessons outside the loaded level", () => {
+  const draft = draftFrom(row, true);
+  assert.throws(() => entryPayload([draft, draft]));
+  assert.throws(() =>
+    entryPayload([draft], [], {
+      data: { levels: [{ key: "IDO", lessons: [{ id: draft.lessonId }] }] },
+    }),
+  );
+  assert.equal(
+    entryPayload([draft], [], {
+      data: { levels: [{ key: "ICHOOSE", lessons: [{ id: draft.lessonId }] }] },
+    }).entries.length,
+    1,
+  );
+});
 test("Did not meet never sends lesson fields and drafts use server suggestions", () => {
   const draft = draftFrom(row, true);
   assert.equal(needsConfirmation(draft), false);

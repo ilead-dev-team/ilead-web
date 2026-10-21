@@ -26,6 +26,40 @@ export const entryRow = z.object({
     .nullable(),
 });
 export const entryPage = z.object({ data: z.array(entryRow), meta: metadata });
+export function parseEntryPage(
+  value: unknown,
+  filters: {
+    page: number;
+    onlyPending: boolean;
+    level: string;
+    classYear: string;
+  },
+) {
+  const result = entryPage.parse(value),
+    { data, meta } = result;
+  if (
+    meta.page !== filters.page ||
+    meta.pageSize !== 20 ||
+    meta.totalPages !== Math.ceil(meta.total / 20) ||
+    data.length !==
+      Math.max(0, Math.min(20, meta.total - (filters.page - 1) * 20)) ||
+    new Set(data.map((r) => r.roundtable.id)).size !== data.length ||
+    data.some(
+      (r) =>
+        (filters.onlyPending && r.entry !== null) ||
+        (filters.level && r.roundtable.currentLevel !== filters.level) ||
+        (filters.classYear && r.roundtable.classYear !== filters.classYear) ||
+        (r.entry &&
+          (r.entry.met
+            ? !r.entry.level || !r.entry.lessonId
+            : r.entry.level !== null || r.entry.lessonId !== null)),
+    )
+  )
+    throw new Error(
+      "The entry page could not be verified. Retry entries and lessons.",
+    );
+  return result;
+}
 const notice = z.object({ roundtableId: z.uuid(), code: z.string() });
 export const entryProblems = z.object({
   saved: z.literal(0),
@@ -39,6 +73,22 @@ export const entryAcknowledgement = z.object({
     errors: z.array(notice).length(0),
   }),
 });
+export function parseEntryAcknowledgement(value: unknown, ids: string[]) {
+  const result = entryAcknowledgement.parse(value);
+  if (
+    result.data.saved > ids.length ||
+    result.data.warnings.some(
+      (w) => w.code !== "LESSON_NOT_NEXT" || !ids.includes(w.roundtableId),
+    ) ||
+    new Set(result.data.warnings.map((w) => w.roundtableId)).size !==
+      result.data.warnings.length
+  )
+    throw new Error(
+      "The entry save result could not be verified. Your drafts are retained.",
+    );
+  // Identical backend retries legitimately save zero changed rows.
+  return result;
+}
 export const entryInput = z.discriminatedUnion("met", [
   z.object({ roundtableId: z.uuid(), met: z.literal(false) }),
   z.object({
@@ -78,9 +128,27 @@ export function needsConfirmation(draft: Draft) {
     draft.level !== draft.row.suggested?.level
   );
 }
-export function entryPayload(drafts: Draft[], confirmed: string[] = []) {
+export function entryPayload(
+  drafts: Draft[],
+  confirmed: string[] = [],
+  catalog?: { data: { levels: { key: string; lessons: { id: string }[] }[] } },
+) {
   if (drafts.length < 1 || drafts.length > 100)
     throw new Error("Save between 1 and 100 changed rows at a time.");
+  if (
+    new Set(drafts.map((d) => d.row.roundtable.id)).size !== drafts.length ||
+    drafts.some(
+      (d) =>
+        d.met &&
+        catalog &&
+        !catalog.data.levels
+          .find((l) => l.key === d.level)
+          ?.lessons.some((l) => l.id === d.lessonId),
+    )
+  )
+    throw new Error(
+      "Choose a lesson from the loaded curriculum for each unique roundtable.",
+    );
   return {
     entries: drafts.map((draft) =>
       entryInput.parse(

@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { curriculumResponse } from "@/lib/curriculum";
 import { levelLabels } from "@/lib/roundtables";
 import {
-  entryPage,
+  parseEntryPage,
   entryProblems,
-  entryAcknowledgement,
+  parseEntryAcknowledgement,
   draftFrom,
   needsConfirmation,
   entryPayload,
@@ -18,6 +18,7 @@ import { useSession } from "./session";
 import { Field, Input, Select } from "./ui/field";
 import { Button } from "./ui/button";
 import { Feedback, Pending } from "./account/feedback";
+import { containDialogFocus } from "./ui/dialog-focus";
 
 export function Entries({
   sessionId,
@@ -39,6 +40,11 @@ export function Entries({
     [invalid, setInvalid] = useState<string>(),
     [saved, setSaved] = useState(false);
   const count = Object.keys(drafts).length;
+  const dialog = useRef<HTMLDialogElement>(null),
+    back = useRef<HTMLButtonElement>(null),
+    saveButton = useRef<HTMLButtonElement>(null),
+    heading = useRef<HTMLHeadingElement>(null),
+    hadReview = useRef(false);
   useEffect(() => {
     onDirty(count > 0);
     return () => onDirty(false);
@@ -72,8 +78,14 @@ export function Entries({
       if (levelFilter) params.set("level", levelFilter);
       if (classFilter) params.set("classYear", classFilter);
       if (q) params.set("q", q);
-      return entryPage.parse(
+      return parseEntryPage(
         await api(`/sessions/${sessionId}/entries?${params}`),
+        {
+          page,
+          onlyPending: pending,
+          level: levelFilter,
+          classYear: classFilter,
+        },
       );
     },
   });
@@ -81,7 +93,37 @@ export function Entries({
     queryKey: ["curriculum", user.id, user.role],
     queryFn: async () => curriculumResponse.parse(await api("/curriculum")),
   });
+  const refresh = useMutation({
+    retry: false,
+    mutationFn: async () => {
+      const results = await Promise.allSettled(
+        [
+          ["entry-rows", sessionId],
+          ["sessions"],
+          ["roundtables"],
+          ["dashboard"],
+        ].map((queryKey) =>
+          cache.invalidateQueries({ queryKey }, { throwOnError: true }),
+        ),
+      );
+      if (results.some((r) => r.status === "rejected"))
+        throw new ApiError(
+          0,
+          "REFRESH_FAILED",
+          "Entries were saved, but some views could not refresh. Retry refreshing saved views; do not repeat the save.",
+        );
+    },
+  });
+  const ready = Boolean(
+    query.data &&
+    !query.isError &&
+    !query.isFetching &&
+    curriculum.data &&
+    !curriculum.isError &&
+    !curriculum.isFetching,
+  );
   const mutation = useMutation({
+    retry: false,
     mutationFn: async ({
       values,
       confirmed,
@@ -89,26 +131,20 @@ export function Entries({
       values: Draft[];
       confirmed: string[];
     }) => {
-      const response = entryAcknowledgement.parse(
+      return parseEntryAcknowledgement(
         await api(`/sessions/${sessionId}/entries`, {
           method: "PUT",
-          body: entryPayload(values, confirmed),
+          body: entryPayload(values, confirmed, curriculum.data),
         }),
+        values.map((v) => v.row.roundtable.id),
       );
-      if (response.data.saved > values.length)
-        throw new Error("Unexpected entry acknowledgement");
-      return response;
     },
     onSuccess: async () => {
       setDrafts({});
       setReview([]);
       setSaved(true);
-      await Promise.all([
-        cache.invalidateQueries({ queryKey: ["entry-rows", sessionId] }),
-        cache.invalidateQueries({ queryKey: ["sessions"] }),
-        cache.invalidateQueries({ queryKey: ["roundtables"] }),
-        cache.invalidateQueries({ queryKey: ["dashboard"] }),
-      ]);
+      // A failed read must not turn an acknowledged write into a failed save.
+      await refresh.mutateAsync().catch(() => {});
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 422) {
@@ -124,6 +160,19 @@ export function Entries({
       }
     },
   });
+  useEffect(() => {
+    if (review.length && !mutation.isPending) {
+      hadReview.current = true;
+      if (!dialog.current?.open) dialog.current?.showModal();
+      back.current?.focus();
+    } else if (!review.length && hadReview.current && !mutation.isPending) {
+      dialog.current?.close();
+      hadReview.current = false;
+      if (saveButton.current && !saveButton.current.disabled)
+        saveButton.current.focus();
+      else heading.current?.focus();
+    }
+  }, [review, mutation.isPending]);
   const parsedProblems =
     mutation.error instanceof ApiError && mutation.error.status === 422
       ? entryProblems.safeParse(mutation.error.details)
@@ -132,6 +181,7 @@ export function Entries({
     ? [...parsedProblems.data.errors, ...parsedProblems.data.warnings]
     : [];
   const change = (id: string, draft: Draft | undefined) => {
+    if (mutation.isPending) return;
     setDrafts((previous) => {
       const next = { ...previous };
       if (draft) next[id] = draft;
@@ -139,17 +189,19 @@ export function Entries({
       return next;
     });
     setSaved(false);
+    refresh.reset();
     setInvalid(undefined);
     setReview([]);
     mutation.reset();
   };
   const save = () => {
+    if (mutation.isPending || !ready || !count) return;
     setSaved(false);
     mutation.reset();
     setInvalid(undefined);
     const values = Object.values(drafts);
     try {
-      entryPayload(values);
+      entryPayload(values, [], curriculum.data);
     } catch {
       setInvalid(
         "Choose a valid lesson for every Met row, and save between 1 and 100 changed rows at a time.",
@@ -164,7 +216,9 @@ export function Entries({
   };
   return (
     <section aria-labelledby="entries-heading" className="my-7">
-      <h2 id="entries-heading">Attendance and lesson entries</h2>
+      <h2 ref={heading} tabIndex={-1} id="entries-heading">
+        Attendance and lesson entries
+      </h2>
       <p className="mb-4 text-muted-foreground">
         Untouched rows remain pending. Drafts stay while changing pages and
         filters on this session. Save before leaving this page; drafts are not
@@ -174,6 +228,7 @@ export function Entries({
         className="my-4 flex flex-wrap items-end gap-3"
         onSubmit={(event) => {
           event.preventDefault();
+          if (mutation.isPending) return;
           setQ(search.trim());
           setPage(1);
         }}
@@ -241,11 +296,14 @@ export function Entries({
         />
         Only pending
       </label>
-      <Pending active={query.isPending || curriculum.isPending} />
+      <Pending active={query.isFetching || curriculum.isFetching} />
       <Feedback error={query.error || curriculum.error} />
       {(query.isError || curriculum.isError) && (
         <Button
           variant="outline"
+          disabled={
+            mutation.isPending || query.isFetching || curriculum.isFetching
+          }
           onClick={() => {
             void query.refetch();
             void curriculum.refetch();
@@ -257,6 +315,8 @@ export function Entries({
       <div className="my-5 grid gap-4">
         {query.data &&
           curriculum.data &&
+          !query.isError &&
+          !curriculum.isError &&
           (query.data.data.length ? (
             query.data.data.map((row) => {
               const id = row.roundtable.id,
@@ -272,7 +332,7 @@ export function Entries({
                 <fieldset
                   key={id}
                   className="min-w-0 rounded-xl border border-border p-4"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || !ready}
                 >
                   <legend className="break-words px-2 font-semibold">
                     {row.roundtable.name}
@@ -371,7 +431,7 @@ export function Entries({
             <p>No matching roundtables.</p>
           ))}
       </div>
-      {query.data && (
+      {(query.data || page > 1) && (
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
@@ -381,11 +441,16 @@ export function Entries({
             Previous entries
           </Button>
           <p>
-            Entry page {page} of {Math.max(1, query.data.meta.totalPages)}
+            Entry page {page}
+            {query.data && !query.isError
+              ? ` of ${Math.max(1, query.data.meta.totalPages)}`
+              : ""}
           </p>
           <Button
             variant="outline"
             disabled={
+              !query.data ||
+              query.isError ||
               page >= query.data.meta.totalPages ||
               query.isFetching ||
               mutation.isPending
@@ -422,8 +487,8 @@ export function Entries({
           {invalid}
         </p>
       )}
-      <Feedback error={mutation.error} />
-      {problems.length > 0 && (
+      {!review.length && <Feedback error={mutation.error} />}
+      {!review.length && problems.length > 0 && (
         <ul className="my-3 grid gap-2" aria-label="Entry validation problems">
           {problems.map((problem, index) => (
             <li
@@ -439,72 +504,110 @@ export function Entries({
           ))}
         </ul>
       )}
-      {review.length > 0 && (
-        <div
-          role="group"
-          aria-label="Confirm non-next lessons"
-          className="my-4 grid gap-3 rounded-xl border border-border p-4"
-        >
-          <h3>Review non-next lessons</h3>
-          <p>
-            These choices differ from the loaded expectation or require server
-            confirmation. Confirming records only the chosen lessons; skipped
-            lessons stay incomplete.
-          </p>
-          <ul>
-            {review.map((id) => {
-              const draft = drafts[id];
-              if (!draft) return null;
-              const chosen = curriculum.data?.data.levels
-                .find((level) => level.key === draft.level)
-                ?.lessons.find((lesson) => lesson.id === draft.lessonId);
-              return (
-                <li key={id}>
-                  {draft.row.roundtable.name}: expected{" "}
-                  {draft.row.suggested
-                    ? `${levelLabels[draft.row.suggested.level]} ${draft.row.suggested.number}. ${draft.row.suggested.title}`
-                    : "no next lesson"}
-                  ; chosen {levelLabels[draft.level]} {chosen?.number}.{" "}
-                  {chosen?.title}
-                </li>
-              );
-            })}
+      <dialog
+        ref={dialog}
+        aria-labelledby="entry-review-heading"
+        aria-describedby="entry-review-help"
+        onKeyDown={containDialogFocus}
+        onCancel={(event) => {
+          if (mutation.isPending) event.preventDefault();
+          else setReview([]);
+        }}
+        onClose={() => {
+          if (!mutation.isPending) setReview([]);
+        }}
+        className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-xl border border-border bg-card p-5 text-card-foreground backdrop:bg-foreground/30"
+      >
+        <h3 id="entry-review-heading">Review non-next lessons</h3>
+        <p id="entry-review-help" className="my-3">
+          These choices differ from the loaded expectation or require server
+          confirmation. Confirming records only the chosen lessons; skipped
+          lessons stay incomplete.
+        </p>
+        <ul className="my-4 space-y-3 break-words">
+          {review.map((id) => {
+            const draft = drafts[id];
+            if (!draft) return null;
+            const chosen = curriculum.data?.data.levels
+              .find((level) => level.key === draft.level)
+              ?.lessons.find((lesson) => lesson.id === draft.lessonId);
+            return (
+              <li key={id}>
+                {draft.row.roundtable.name}: expected{" "}
+                {draft.row.suggested
+                  ? `${levelLabels[draft.row.suggested.level]} ${draft.row.suggested.number}. ${draft.row.suggested.title}`
+                  : "no next lesson"}
+                ; chosen {levelLabels[draft.level]} {chosen?.number}.{" "}
+                {chosen?.title}
+              </li>
+            );
+          })}
+        </ul>
+        {review.length > 0 && <Feedback error={mutation.error} />}
+        {review.length > 0 && problems.length > 0 && (
+          <ul
+            aria-label="Entry validation problems"
+            className="my-3 space-y-2 break-words"
+          >
+            {problems.map((problem, index) => (
+              <li key={`${problem.roundtableId}-${index}`}>
+                {drafts[problem.roundtableId]?.row.roundtable.name ??
+                  "Roundtable"}
+                :{" "}
+                {entryErrorText[problem.code] ??
+                  "The server rejected this row. Review it before saving."}
+              </li>
+            ))}
           </ul>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              disabled={mutation.isPending}
-              onClick={() =>
+        )}
+        <Pending active={mutation.isPending} />
+        <div className="flex flex-wrap gap-3">
+          <Button
+            disabled={mutation.isPending || !ready || !review.length}
+            onClick={() => {
+              if (!mutation.isPending && ready && review.length)
                 mutation.mutate({
                   values: Object.values(drafts),
                   confirmed: review,
-                })
-              }
-            >
-              Confirm lessons and save
-            </Button>
-            <Button
-              variant="outline"
-              disabled={mutation.isPending}
-              onClick={() => setReview([])}
-            >
-              Back to entries
-            </Button>
-          </div>
+                });
+            }}
+          >
+            Confirm lessons and save
+          </Button>
+          <Button
+            ref={back}
+            variant="outline"
+            disabled={mutation.isPending}
+            onClick={() => setReview([])}
+          >
+            Back to entries
+          </Button>
         </div>
-      )}
+      </dialog>
       <Pending active={mutation.isPending} />
       <Button
+        ref={saveButton}
         disabled={
-          !count || mutation.isPending || !curriculum.data || review.length > 0
+          !count ||
+          mutation.isPending ||
+          !ready ||
+          review.length > 0 ||
+          refresh.isPending
         }
         onClick={save}
       >
         Save changed entries
       </Button>
-      {saved && (
-        <p role="status">
-          Entries saved. Progress and attendance have been refreshed.
-        </p>
+      {saved && <p role="status">Entries saved.</p>}
+      <Feedback error={refresh.error} />
+      {refresh.isError && (
+        <Button
+          variant="outline"
+          disabled={refresh.isPending || mutation.isPending}
+          onClick={() => refresh.mutate()}
+        >
+          Retry refreshing saved views
+        </Button>
       )}
     </section>
   );

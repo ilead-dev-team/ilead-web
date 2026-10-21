@@ -92,24 +92,35 @@ test("drafts survive pages and filters, failed save preserves all rows, and only
   const bodies: unknown[] = [];
   await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) => {
     const params = new URL(r.request().url()).searchParams;
-    const item =
-      params.get("page") === "2"
-        ? row(second, "Pinnacles")
-        : row(first, "Summits");
-    if (saved)
-      item.entry = {
-        met: item.roundtable.id === first,
-        level: item.roundtable.id === first ? "ICHOOSE" : null,
-        lessonId: item.roundtable.id === first ? lesson1 : null,
-      };
+    const firstRow = row(first, "Summits"),
+      lastRow = row(second, "Pinnacles");
+    const rows = [
+      firstRow,
+      ...Array.from({ length: 19 }, (_, i) =>
+        row(
+          `66666666-6666-4666-8666-${String(i).padStart(12, "0")}`,
+          `Extra roundtable ${i + 1}`,
+        ),
+      ),
+      lastRow,
+    ];
+    if (saved) {
+      firstRow.entry = { met: true, level: "ICHOOSE", lessonId: lesson1 };
+      lastRow.entry = { met: false, level: null, lessonId: null };
+    }
+    const filtered =
+      params.get("onlyPending") === "true"
+        ? rows.filter((r) => !r.entry)
+        : rows;
+    const pageNumber = Number(params.get("page"));
     return r.fulfill({
       json: {
-        data: [item],
+        data: filtered.slice((pageNumber - 1) * 20, pageNumber * 20),
         meta: {
           page: Number(params.get("page")),
           pageSize: 20,
-          total: 21,
-          totalPages: 2,
+          total: filtered.length,
+          totalPages: Math.ceil(filtered.length / 20),
         },
       },
     });
@@ -158,11 +169,7 @@ test("drafts survive pages and filters, failed save preserves all rows, and only
   ).toBeVisible();
   fail = false;
   await page.getByRole("button", { name: "Save changed entries" }).click();
-  await expect(
-    page.getByText(
-      "Entries saved. Progress and attendance have been refreshed.",
-    ),
-  ).toBeVisible();
+  await expect(page.getByText("Entries saved.")).toBeVisible();
   expect(bodies).toEqual(
     Array(2).fill({
       entries: [
@@ -243,7 +250,7 @@ test("non-next review requires explicit confirmation and backend row errors pres
     .selectOption(lesson2);
   await page.getByRole("button", { name: "Save changed entries" }).click();
   await expect(
-    page.getByRole("group", { name: "Confirm non-next lessons" }),
+    page.getByRole("dialog", { name: "Review non-next lessons" }),
   ).toContainText("chosen iChoose 2. Purpose");
   expect(calls).toBe(0);
   await page.getByRole("button", { name: "Confirm lessons and save" }).click();
@@ -256,6 +263,7 @@ test("non-next review requires explicit confirmation and backend row errors pres
       .getByLabel("Recorded lesson"),
   ).toHaveValue(lesson2);
   expect(calls).toBe(1);
+  await page.getByRole("button", { name: "Back to entries" }).click();
   await page.getByRole("button", { name: "Discard row change" }).click();
   await expect(
     page.getByText("0 unsaved rows, including other pages and filters."),
@@ -317,17 +325,355 @@ test("invalid acknowledgements retain drafts and server warnings require a separ
   ).toBeVisible();
   await page.getByRole("button", { name: "Save changed entries" }).click();
   await expect(
-    page.getByRole("group", { name: "Confirm non-next lessons" }),
+    page.getByRole("dialog", { name: "Review non-next lessons" }),
   ).toBeVisible();
   expect(calls).toBe(2);
   await page.getByRole("button", { name: "Confirm lessons and save" }).click();
-  await expect(
-    page.getByText(
-      "Entries saved. Progress and attendance have been refreshed.",
-    ),
-  ).toBeVisible();
+  await expect(page.getByText("Entries saved.")).toBeVisible();
   expect(calls).toBe(3);
 });
+
+async function isolated(page: Page) {
+  await page.route("https://**/*", (r) => r.abort());
+  await page.route("**/api/v1/**", (r) =>
+    r.fulfill({
+      status: r.request().url().endsWith("/notifications/unread-count")
+        ? 200
+        : 404,
+      json: r.request().url().endsWith("/notifications/unread-count")
+        ? { data: { count: 0 } }
+        : {
+            error: {
+              code: "NOT_FOUND",
+              message: "Fixture endpoint unavailable",
+            },
+          },
+    }),
+  );
+  await setup(page);
+}
+async function openEntries(page: Page) {
+  await page.goto(`/sessions/${sessionId}`);
+  await page.getByRole("button", { name: "Record or correct entries" }).click();
+}
+const singlePage = { page: 1, pageSize: 20, total: 1, totalPages: 1 };
+test("failed later entry pages keep drafts and offer a working Previous action", async ({
+  page,
+}) => {
+  await isolated(page);
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) => {
+    if (new URL(r.request().url()).searchParams.get("page") === "2")
+      return r.fulfill({ status: 503, json: {} });
+    return r.fulfill({
+      json: {
+        data: [
+          row(first, "Summits"),
+          ...Array.from({ length: 19 }, (_, i) =>
+            row(
+              `66666666-6666-4666-8666-${String(i).padStart(12, "0")}`,
+              `Extra ${i + 1}`,
+            ),
+          ),
+        ],
+        meta: { ...singlePage, total: 21, totalPages: 2 },
+      },
+    });
+  });
+  await openEntries(page);
+  await page
+    .getByRole("group", { name: "Summits", exact: true })
+    .getByLabel("Attendance")
+    .selectOption("false");
+  await page.getByRole("button", { name: "Next entries" }).click();
+  await expect(
+    page.getByRole("button", { name: "Retry entries and lessons" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText("1 unsaved row, including other pages and filters."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Previous entries" }).click();
+  await expect(
+    page
+      .getByRole("group", { name: "Summits", exact: true })
+      .getByLabel("Attendance"),
+  ).toHaveValue("false");
+});
+test("failed lesson refresh hides stale controls and retains drafts until a successful retry", async ({
+  page,
+}) => {
+  await isolated(page);
+  await page.clock.install({ time: new Date("2026-10-21T09:00:00Z") });
+  let fail = false;
+  await page.route("**/api/v1/curriculum", (r) =>
+    fail ? r.fulfill({ status: 503, json: {} }) : r.fallback(),
+  );
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+    r.fulfill({ json: { data: [row(first, "Summits")], meta: singlePage } }),
+  );
+  await openEntries(page);
+  await page.getByLabel("Attendance", { exact: true }).selectOption("true");
+  fail = true;
+  await page.clock.fastForward(31_000);
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event("visibilitychange", { bubbles: true })),
+  );
+  await expect(
+    page.getByRole("button", { name: "Retry entries and lessons" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Summits", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText("1 unsaved row, including other pages and filters."),
+  ).toBeVisible();
+  fail = false;
+  await page.getByRole("button", { name: "Retry entries and lessons" }).click();
+  await expect(page.getByLabel("Recorded lesson")).toHaveValue(lesson1);
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toBeEnabled();
+});
+
+test("mismatched entry pages remain uneditable until a valid retry", async ({
+  page,
+}) => {
+  await isolated(page);
+  let bad = true;
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+    r.fulfill({
+      json: {
+        data: [row(first, "Summits")],
+        meta: { ...singlePage, page: bad ? 2 : 1 },
+      },
+    }),
+  );
+  await openEntries(page);
+  await expect(
+    page.getByRole("button", { name: "Retry entries and lessons" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Summits", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toBeDisabled();
+  bad = false;
+  await page.getByRole("button", { name: "Retry entries and lessons" }).click();
+  await expect(
+    page.getByRole("group", { name: "Summits", exact: true }),
+  ).toBeVisible();
+});
+test("successful entry save with failed refresh offers a read-only retry without repeating the write", async ({
+  page,
+}) => {
+  await isolated(page);
+  let saved = false,
+    failRead = false,
+    writes = 0;
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+    r.fulfill(
+      failRead
+        ? { status: 503, json: {} }
+        : {
+            json: {
+              data: [
+                {
+                  ...row(first, "Summits"),
+                  entry: saved
+                    ? { met: false, level: null, lessonId: null }
+                    : null,
+                },
+              ],
+              meta: singlePage,
+            },
+          },
+    ),
+  );
+  await page.route(`**/api/v1/sessions/${sessionId}/entries`, (r) => {
+    writes++;
+    saved = true;
+    failRead = true;
+    return r.fulfill({
+      json: { data: { saved: 1, warnings: [], errors: [] } },
+    });
+  });
+  await openEntries(page);
+  await page.getByLabel("Attendance", { exact: true }).selectOption("false");
+  await page.getByRole("button", { name: "Save changed entries" }).click();
+  await expect(page.getByText("Entries saved.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Retry refreshing saved views" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Summits", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toBeDisabled();
+  failRead = false;
+  await page
+    .getByRole("button", { name: "Retry refreshing saved views" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Retry refreshing saved views" }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Attendance", { exact: true })).toHaveValue(
+    "false",
+  );
+  expect(writes).toBe(1);
+});
+test("unrelated entry acknowledgement warnings retain drafts while a valid no-op retry succeeds", async ({
+  page,
+}) => {
+  await isolated(page);
+  let writes = 0;
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+    r.fulfill({ json: { data: [row(first, "Summits")], meta: singlePage } }),
+  );
+  await page.route(`**/api/v1/sessions/${sessionId}/entries`, (r) => {
+    writes++;
+    return r.fulfill({
+      json: {
+        data: {
+          saved: 0,
+          errors: [],
+          warnings:
+            writes === 1
+              ? [{ roundtableId: second, code: "LESSON_NOT_NEXT" }]
+              : [],
+        },
+      },
+    });
+  });
+  await openEntries(page);
+  await page.getByLabel("Attendance", { exact: true }).selectOption("false");
+  await page.getByRole("button", { name: "Save changed entries" }).click();
+  await expect(
+    page.getByText("1 unsaved row, including other pages and filters."),
+  ).toBeVisible();
+  await expect(page.getByText("Entries saved.", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
+  await page.getByRole("button", { name: "Save changed entries" }).click();
+  await expect(page.getByText("Entries saved.", { exact: true })).toBeVisible();
+  expect(writes).toBe(2);
+});
+test("non-next review contains focus, restores it on Escape and blocks dismissal during a pending save", async ({
+  page,
+}) => {
+  await isolated(page);
+  let release!: () => void,
+    writes = 0;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+    r.fulfill({ json: { data: [row(first, "Summits")], meta: singlePage } }),
+  );
+  await page.route(`**/api/v1/sessions/${sessionId}/entries`, async (r) => {
+    writes++;
+    expect(r.request().postDataJSON().entries[0].confirmNotNext).toBe(true);
+    await pending;
+    return r.fulfill({
+      json: {
+        data: {
+          saved: 1,
+          errors: [],
+          warnings: [{ roundtableId: first, code: "LESSON_NOT_NEXT" }],
+        },
+      },
+    });
+  });
+  await openEntries(page);
+  await page.getByLabel("Attendance", { exact: true }).selectOption("true");
+  await page.getByLabel("Recorded lesson").selectOption(lesson2);
+  const save = page.getByRole("button", { name: "Save changed entries" });
+  await save.click();
+  const dialog = page.getByRole("dialog", { name: "Review non-next lessons" });
+  await expect(
+    dialog.getByRole("button", { name: "Back to entries" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Confirm lessons and save" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Back to entries" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(save).toBeFocused();
+  await save.click();
+  await dialog
+    .getByRole("button", { name: "Confirm lessons and save" })
+    .click();
+  await expect(
+    dialog.getByRole("button", { name: "Back to entries" }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Confirm lessons and save" })
+    .dispatchEvent("click");
+  expect(writes).toBe(1);
+  release();
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Attendance and lesson entries" }),
+  ).toBeFocused();
+});
+for (const theme of ["light", "dark"])
+  test(`entry review fits a narrow keyboard layout in ${theme} theme`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await isolated(page);
+    await page.setViewportSize({ width: 320, height: 740 });
+    await page.addInitScript(
+      (theme) => localStorage.setItem("ilead-theme", theme),
+      theme,
+    );
+    await page.route(`**/api/v1/sessions/${sessionId}/entries?**`, (r) =>
+      r.fulfill({
+        json: {
+          data: [
+            row(
+              first,
+              "Summits leadership roundtable with a longer descriptive name",
+            ),
+          ],
+          meta: singlePage,
+        },
+      }),
+    );
+    await openEntries(page);
+    await page.getByLabel("Attendance", { exact: true }).selectOption("true");
+    await page.getByLabel("Recorded lesson").selectOption(lesson2);
+    await page.getByRole("button", { name: "Save changed entries" }).click();
+    const dialog = page.getByRole("dialog", {
+      name: "Review non-next lessons",
+    });
+    await expect(
+      dialog.getByRole("button", { name: "Back to entries" }),
+    ).toBeFocused();
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(await dialog.evaluate((d) => d.scrollWidth <= d.clientWidth)).toBe(
+      true,
+    );
+    await dialog.getByRole("button", { name: "Back to entries" }).focus();
+    await page.screenshot({
+      path: `test-results/entry-review-${theme}.png`,
+      fullPage: false,
+    });
+  });
 
 test("cancelled sessions never load an entry editor", async ({ page }) => {
   await setup(page, true);
