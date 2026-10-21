@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useQuery,
   useMutation,
@@ -25,6 +25,7 @@ import { Field, Input, Select } from "./ui/field";
 function LessonEditor({
   item,
   level,
+  levelLabel,
   blocked,
   readBlocked,
   refresh,
@@ -32,6 +33,7 @@ function LessonEditor({
 }: {
   item: z.infer<typeof lesson>;
   level: z.infer<typeof levelKey>;
+  levelLabel: string;
   blocked: boolean;
   readBlocked: boolean;
   refresh: () => Promise<void>;
@@ -45,7 +47,14 @@ function LessonEditor({
   const [checkError, setCheckError] = useState<unknown>(null);
   const [checked, setChecked] = useState(false);
   const writing = useRef(false);
+  const restoreFocus = useRef(false);
   const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (restoreFocus.current && !blocked && !uncertain && !checking) {
+      input.current?.focus();
+      restoreFocus.current = false;
+    }
+  }, [blocked, uncertain, checking]);
   const cache = useQueryClient();
   const mutation = useMutation({
     mutationKey: ["curriculum-write"],
@@ -89,10 +98,10 @@ function LessonEditor({
           return result;
         },
       });
+      restoreFocus.current = true;
       setUncertain(false);
       setChecked(true);
       mutation.reset();
-      requestAnimationFrame(() => input.current?.focus());
     } catch (error) {
       setCheckError(error);
     } finally {
@@ -102,7 +111,7 @@ function LessonEditor({
   const id = `lesson-${item.id}`;
   return (
     <form
-      aria-label={`Edit ${level} lesson ${item.number}`}
+      aria-label={`Edit ${levelLabel} lesson ${item.number}`}
       className="rounded-xl border border-border p-4"
       noValidate
       onSubmit={(event) => {
@@ -275,6 +284,7 @@ export function Curriculum() {
                     key={item.id}
                     item={item}
                     level={level.key}
+                    levelLabel={level.label}
                     blocked={blocked}
                     readBlocked={
                       query.isFetching || writes > 0 || views.isPending

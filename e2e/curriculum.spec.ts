@@ -26,9 +26,13 @@ async function session(page: Page, role = "SPONSOR") {
     r.fulfill({ json: { data: { ...user, role } } }),
   );
 }
-const editor = (page: Page, level = "ICHOOSE", number = 1) =>
+const editor = (
+  page: Page,
+  level: "ICHOOSE" | "IDO" | "ILEAD" = "ICHOOSE",
+  number = 1,
+) =>
   page.getByRole("form", {
-    name: `Edit ${level} lesson ${number}`,
+    name: `Edit ${{ ICHOOSE: "iChoose", IDO: "iDo", ILEAD: "iLead" }[level]} lesson ${number}`,
     exact: true,
   });
 test("Sponsor edits titles, preserves failed input and uses accessible mobile layouts", async ({
@@ -62,7 +66,7 @@ test("Sponsor edits titles, preserves failed input and uses accessible mobile la
     .getByRole("textbox", { name: "Lesson 1 title", exact: true })
     .fill("Lead with care");
   await page
-    .getByRole("form", { name: "Edit ICHOOSE lesson 1", exact: true })
+    .getByRole("form", { name: "Edit iChoose lesson 1", exact: true })
     .getByRole("button", { name: "Save", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
@@ -73,7 +77,7 @@ test("Sponsor edits titles, preserves failed input and uses accessible mobile la
   ).toHaveValue("Lead with care");
   fail = false;
   await page
-    .getByRole("form", { name: "Edit ICHOOSE lesson 1", exact: true })
+    .getByRole("form", { name: "Edit iChoose lesson 1", exact: true })
     .getByRole("button", { name: "Save", exact: true })
     .click();
   await expect(page.getByText("Lesson 1 saved.")).toBeVisible();
