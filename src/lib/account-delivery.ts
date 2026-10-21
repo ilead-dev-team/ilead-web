@@ -129,6 +129,16 @@ export function recoverySelection(value: string | string[] | undefined) {
   if (value === undefined) return undefined;
   return z.uuid().safeParse(value).success ? (value as string) : null;
 }
+export function recoveryReturn(path: string, search: string) {
+  if (path !== "/people/recovery") return path;
+  const params = new URLSearchParams(search);
+  // A single UUID is the only notification context retained through login.
+  const values = params.getAll("request");
+  const selected = values.length === 1 ? recoverySelection(values[0]) : null;
+  return selected && [...params.keys()].length === 1
+    ? `${path}?request=${selected}`
+    : path;
+}
 export function parseRecoveryDetail(value: unknown, id: string) {
   const detail = recoveryRow.extend({
     deliveries: z.array(recoveryRow.shape.deliveries.element),

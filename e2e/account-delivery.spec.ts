@@ -107,6 +107,39 @@ async function fillInvitation(page: Page) {
   await page.getByLabel("Confirm password").fill("Password123");
 }
 
+test("recovery notification survives expired-session sign-in", async ({
+  page,
+}) => {
+  const { calls } = await setup(page);
+  let signedIn = false;
+  await page.route("**/api/v1/auth/me", (route) =>
+    route.fulfill(
+      signedIn
+        ? { json: { data: staff } }
+        : { status: 401, json: { error: { code: "UNAUTHORIZED" } } },
+    ),
+  );
+  await page.route("**/api/v1/auth/refresh", (route) =>
+    route.fulfill({ status: 401, json: { error: { code: "UNAUTHORIZED" } } }),
+  );
+  await page.route("**/api/v1/auth/login", (route) => {
+    signedIn = true;
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto(`/people/recovery?request=${recovery.id}`);
+  await expect(page).toHaveURL(
+    `/login?next=${encodeURIComponent(`/people/recovery?request=${recovery.id}`)}`,
+  );
+  expect(calls.some((c) => c.path.startsWith("/account-recovery"))).toBe(false);
+  await page.getByLabel("Email address").fill(staff.email);
+  await page.getByLabel("Password", { exact: true }).fill("Password123");
+  await page.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(page).toHaveURL(`/people/recovery?request=${recovery.id}`);
+  await expect(
+    page.getByRole("heading", { name: "Request details" }),
+  ).toBeVisible();
+});
+
 test("recovery notification opens exact request and refreshes after reviewed send", async ({
   page,
 }) => {

@@ -10,6 +10,7 @@ import {
   parseRecovery,
   parseRecoveryDetail,
   recoverySelection,
+  recoveryReturn,
   canSendRecovery,
   recoveryAcknowledgement,
   recoveryDeliveryMessage,
@@ -29,6 +30,21 @@ test("recovery deep links reject malformed and repeated identifiers", () => {
   assert.equal(recoverySelection(recovery.id), recovery.id);
   for (const value of ["", "../mailbox", [recovery.id, recovery.id]])
     assert.equal(recoverySelection(value), null);
+});
+test("sign-in return retains only a single safe recovery request identifier", () => {
+  const path = "/people/recovery";
+  assert.equal(
+    recoveryReturn(path, `?request=${recovery.id}`),
+    `${path}?request=${recovery.id}`,
+  );
+  for (const search of [
+    "",
+    "?request=invalid",
+    `?request=${recovery.id}&request=${recovery.id}`,
+    `?request=${recovery.id}&token=secret`,
+  ])
+    assert.equal(recoveryReturn(path, search), path);
+  assert.equal(recoveryReturn("/reports", "?token=secret"), "/reports");
 });
 test("recovery details require matching identity, mailbox state and unique delivery history", () => {
   const data = {
