@@ -379,7 +379,7 @@ test("roundtable registration uses curriculum choices and retains input after a 
             id: "22222222-2222-4222-8222-222222222222",
             classYear: "YEAR_1",
             completedAt: null,
-            facilitator: null,
+            facilitator: { id: user.id, name: user.name, classYear: "YEAR_1" },
             enrolledAt: "2026-10-19T08:00:00.000Z",
             attendance: { met: 0, didNotMeet: 0, history: [] },
             name: "New name",
