@@ -2,16 +2,26 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useIsMutating,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { activityPage } from "@/lib/configuration";
 import { loadAcademicYears } from "@/lib/academic";
 import {
-  sessionRecord,
   sessionPage,
   sessionInput,
   sessionRange,
   cancellation,
+  savedSession,
+  changedSession,
+  readSession,
+  sessionOnDate,
+  uncertainSessionWrite,
+  type SessionInput,
   type SessionRecord,
 } from "@/lib/sessions";
 import { useSession } from "./session";
@@ -28,10 +38,24 @@ function useRefreshSessions() {
     await cache.invalidateQueries({ queryKey: ["dashboard"] });
   };
 }
-function SessionForm({ row }: { row?: SessionRecord }) {
+function SessionForm({
+  row,
+  blocked = false,
+  onUncertain,
+}: {
+  row?: SessionRecord;
+  blocked?: boolean;
+  onUncertain?: (value: boolean) => void;
+}) {
   const user = useSession(),
     router = useRouter(),
     refresh = useRefreshSessions();
+  const cache = useQueryClient();
+  const writes = useIsMutating({
+    mutationKey: ["session-write", row?.id ?? "new"],
+  });
+  const [uncertain, setUncertain] = useState(false),
+    [existing, setExisting] = useState<SessionRecord | null>(null);
   const [date, setDate] = useState(row?.date ?? ""),
     [notes, setNotes] = useState(row?.notes ?? ""),
     [selected, setSelected] = useState<Record<string, boolean>>(
@@ -74,18 +98,23 @@ function SessionForm({ row }: { row?: SessionRecord }) {
       });
   });
   const mutation = useMutation({
-    mutationFn: async (body: object) => {
-      const result = sessionRecord.parse(
-        (
-          await api<{ data: unknown }>(
-            row ? `/sessions/${row.id}` : "/sessions",
-            { method: row ? "PATCH" : "POST", body },
-          )
-        ).data,
+    mutationKey: ["session-write", row?.id ?? "new"],
+    retry: false,
+    mutationFn: async (body: SessionInput) => {
+      return savedSession(
+        await api(row ? `/sessions/${row.id}` : "/sessions", {
+          method: row ? "PATCH" : "POST",
+          body,
+        }),
+        body,
+        row?.id,
       );
-      if (row && result.id !== row.id)
-        throw new Error("Unexpected session acknowledgement");
-      return result;
+    },
+    onError: (error) => {
+      if (uncertainSessionWrite(error)) {
+        setUncertain(true);
+        onUncertain?.(true);
+      }
     },
     onSuccess: async (result) => {
       setDate(result.date);
@@ -100,14 +129,46 @@ function SessionForm({ row }: { row?: SessionRecord }) {
       await refresh();
     },
   });
+  const check = useMutation({
+    retry: false,
+    mutationFn: async () =>
+      row
+        ? readSession(await api(`/sessions/${row.id}`), row.id)
+        : sessionOnDate(
+            await api(`/sessions?from=${date}&to=${date}&page=1&pageSize=20`),
+            date,
+          ),
+    onSuccess: (result) => {
+      mutation.reset();
+      if (row && result) {
+        onUncertain?.(false);
+        cache.setQueryData(["sessions", "detail", user.id, row.id], result);
+        setUncertain(false);
+      } else {
+        setExisting(result);
+        setUncertain(Boolean(result));
+      }
+    },
+  });
+  const busy = mutation.isPending || writes > 0 || check.isPending;
+  const needsCheck = row ? blocked : uncertain;
+  const locked = busy || needsCheck;
   return (
     <form
       className="my-6 grid max-w-2xl gap-4 rounded-xl border border-border p-5"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
+        if (
+          locked ||
+          !activities.data ||
+          activities.isError ||
+          activities.isFetching
+        )
+          return;
         setSaved(false);
         mutation.reset();
+        check.reset();
         const parsed = sessionInput.safeParse({
           date,
           notes,
@@ -132,9 +193,10 @@ function SessionForm({ row }: { row?: SessionRecord }) {
           type="date"
           aria-describedby="session-date-help"
           value={date}
-          disabled={mutation.isPending}
+          disabled={locked}
           onChange={(e) => {
             setDate(e.target.value);
+            check.reset();
             setSaved(false);
           }}
         />
@@ -167,7 +229,7 @@ function SessionForm({ row }: { row?: SessionRecord }) {
             <input
               type="checkbox"
               checked={selected[a.id] ?? false}
-              disabled={mutation.isPending}
+              disabled={locked}
               onChange={(e) => {
                 setSelected((previous) => ({
                   ...previous,
@@ -187,7 +249,7 @@ function SessionForm({ row }: { row?: SessionRecord }) {
           className="min-h-28 w-full rounded-lg border border-input bg-background p-3"
           maxLength={5000}
           value={notes}
-          disabled={mutation.isPending}
+          disabled={locked}
           onChange={(e) => {
             setNotes(e.target.value);
             setSaved(false);
@@ -200,9 +262,48 @@ function SessionForm({ row }: { row?: SessionRecord }) {
         </p>
       )}
       <Feedback error={mutation.error} />
-      <Pending active={mutation.isPending} />
+      {needsCheck && (
+        <p className="notice" role="status">
+          The save result is uncertain. Your entries are retained. Check saved
+          state before making another change.
+        </p>
+      )}
+      {existing && (
+        <p className="notice">
+          A session exists on this date.{" "}
+          <Link href={`/sessions/${existing.id}`}>Open saved session</Link> and
+          review it before making changes.
+        </p>
+      )}
+      {(needsCheck || check.isSuccess) && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => check.mutate()}
+          >
+            Check saved state
+          </Button>
+          <Feedback error={check.error} />
+          {check.isSuccess && !existing && (
+            <p role="status">
+              {row
+                ? "Saved state refreshed above. Review it against your retained form before saving again."
+                : "No session was found on this date. You may review and retry creation; the server checks date uniqueness."}
+            </p>
+          )}
+        </>
+      )}
+      <Pending active={busy} />
       <Button
-        disabled={mutation.isPending || !activities.data || (!row && saved)}
+        disabled={
+          locked ||
+          !activities.data ||
+          activities.isError ||
+          activities.isFetching ||
+          (!row && saved)
+        }
       >
         {row ? "Save session" : "Create session"}
       </Button>
@@ -210,24 +311,39 @@ function SessionForm({ row }: { row?: SessionRecord }) {
     </form>
   );
 }
-function SessionLifecycle({ row }: { row: SessionRecord }) {
+function SessionLifecycle({
+  row,
+  blocked,
+  onUncertain,
+}: {
+  row: SessionRecord;
+  blocked: boolean;
+  onUncertain: (value: boolean) => void;
+}) {
+  const user = useSession(),
+    cache = useQueryClient();
+  const writes = useIsMutating({ mutationKey: ["session-write", row.id] });
   const refresh = useRefreshSessions(),
     [confirm, setConfirm] = useState(false),
     [reason, setReason] = useState(""),
     [invalid, setInvalid] = useState<string>();
   const mutation = useMutation({
-    mutationFn: async (body: object) => {
-      const result = sessionRecord.parse(
-        (
-          await api<{ data: unknown }>(
-            `/sessions/${row.id}${row.status === "HELD" ? "/cancel" : ""}`,
-            { method: row.status === "HELD" ? "POST" : "PATCH", body },
-          )
-        ).data,
+    mutationKey: ["session-write", row.id],
+    retry: false,
+    mutationFn: async (body: { reason: string } | { status: "HELD" }) => {
+      return changedSession(
+        await api(
+          `/sessions/${row.id}${row.status === "HELD" ? "/cancel" : ""}`,
+          { method: row.status === "HELD" ? "POST" : "PATCH", body },
+        ),
+        row.id,
+        body,
       );
-      if (result.id !== row.id)
-        throw new Error("Unexpected session acknowledgement");
-      return result;
+    },
+    onError: (error) => {
+      if (uncertainSessionWrite(error)) {
+        onUncertain(true);
+      }
     },
     onSuccess: async () => {
       setConfirm(false);
@@ -235,6 +351,18 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
       await refresh();
     },
   });
+  const check = useMutation({
+    retry: false,
+    mutationFn: async () =>
+      readSession(await api(`/sessions/${row.id}`), row.id),
+    onSuccess: (result) => {
+      onUncertain(false);
+      cache.setQueryData(["sessions", "detail", user.id, row.id], result);
+      mutation.reset();
+      setConfirm(false);
+    },
+  });
+  const busy = mutation.isPending || writes > 0 || check.isPending;
   return (
     <div className="my-6 rounded-xl border border-border p-5">
       <h2>{row.status === "HELD" ? "Cancel session" : "Reopen session"}</h2>
@@ -247,9 +375,11 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
         <Button
           className="mt-4"
           variant="outline"
+          disabled={busy || blocked}
           onClick={() => {
             mutation.reset();
             setConfirm(true);
+            check.reset();
           }}
         >
           {" "}
@@ -261,6 +391,7 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
+            if (busy || blocked) return;
             setInvalid(undefined);
             mutation.reset();
             if (row.status === "HELD") {
@@ -283,7 +414,7 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
                 id="cancel-reason"
                 value={reason}
                 maxLength={1000}
-                disabled={mutation.isPending}
+                disabled={busy || blocked}
                 aria-invalid={!!invalid}
                 aria-describedby={invalid ? "cancel-reason-error" : undefined}
                 onChange={(e) => setReason(e.target.value)}
@@ -291,7 +422,7 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
             </Field>
           )}
           <div className="flex flex-wrap gap-3">
-            <Button disabled={mutation.isPending}>
+            <Button disabled={busy || blocked}>
               {row.status === "HELD"
                 ? "Confirm cancellation"
                 : "Confirm held session"}
@@ -299,7 +430,7 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
             <Button
               type="button"
               variant="outline"
-              disabled={mutation.isPending}
+              disabled={busy}
               onClick={() => setConfirm(false)}
             >
               Keep current state
@@ -307,7 +438,31 @@ function SessionLifecycle({ row }: { row: SessionRecord }) {
           </div>
         </form>
       )}
-      <Pending active={mutation.isPending} />
+      {blocked && (
+        <p className="notice" role="status">
+          The status change is uncertain. Check saved state before cancelling or
+          reopening again.
+        </p>
+      )}
+      {(blocked || check.isSuccess) && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => check.mutate()}
+          >
+            Check session status
+          </Button>
+          <Feedback error={check.error} />
+          {check.isSuccess && (
+            <p role="status">
+              Session status refreshed. Review it before making another change.
+            </p>
+          )}
+        </>
+      )}
+      <Pending active={busy} />
       <Feedback error={mutation.error} />
     </div>
   );
@@ -567,13 +722,11 @@ export function NewSession() {
 export function SessionDetail({ id }: { id: string }) {
   const user = useSession();
   const [showEntries, setShowEntries] = useState(false),
-    [entriesDirty, setEntriesDirty] = useState(false);
+    [entriesDirty, setEntriesDirty] = useState(false),
+    [uncertainWrite, setUncertainWrite] = useState(false);
   const query = useQuery({
     queryKey: ["sessions", "detail", user.id, id],
-    queryFn: async () =>
-      sessionRecord.parse(
-        (await api<{ data: unknown }>(`/sessions/${id}`)).data,
-      ),
+    queryFn: async () => readSession(await api(`/sessions/${id}`), id),
   });
   const row = query.data;
   return (
@@ -615,7 +768,12 @@ export function SessionDetail({ id }: { id: string }) {
             </ul>
           </div>
           {row.status === "HELD" ? (
-            <SessionForm key={`metadata-${row.id}`} row={row} />
+            <SessionForm
+              key={`metadata-${row.id}`}
+              row={row}
+              blocked={uncertainWrite}
+              onUncertain={setUncertainWrite}
+            />
           ) : (
             <p role="status">
               This session is cancelled. Reopen it before editing or recording
@@ -640,7 +798,12 @@ export function SessionDetail({ id }: { id: string }) {
               Save or discard entry changes before cancelling this session.
             </p>
           ) : (
-            <SessionLifecycle key={`${row.id}-${row.status}`} row={row} />
+            <SessionLifecycle
+              key={`${row.id}-${row.status}`}
+              row={row}
+              blocked={uncertainWrite}
+              onUncertain={setUncertainWrite}
+            />
           )}
         </>
       )}

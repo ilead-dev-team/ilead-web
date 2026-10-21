@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-const id = "11111111-1111-4111-8111-111111111111",
-  activityId = "22222222-2222-4222-8222-222222222222";
+import { id, activityId, record } from "../tests/fixtures/sessions";
 const user = {
   id: "c",
   name: "Coordinator",
@@ -10,19 +9,6 @@ const user = {
   classYear: null,
   hasRoundtable: false,
   roundtableId: null,
-};
-const record = {
-  id,
-  date: "2026-10-14",
-  status: "HELD",
-  cancellationReason: null as string | null,
-  notes: "Weekly meeting",
-  academicYear: { id: "year", label: "2026–27" },
-  term: { id: "term", number: 1, name: "Term 1" },
-  createdBy: { id: "c", name: "Coordinator" },
-  activities: [{ activityTypeId: activityId, name: "Reflection", held: true }],
-  counts: { roundtables: 4, met: 0, notMet: 0, pending: 4 },
-  report: null,
 };
 async function auth(
   page: import("@playwright/test").Page,
@@ -53,6 +39,321 @@ async function auth(
     }),
   );
 }
+async function isolated(page: import("@playwright/test").Page) {
+  await page.route("https://**/*", (r) => r.abort());
+  await page.route("**/api/v1/**", (r) =>
+    r.fulfill({
+      status: r.request().url().endsWith("/notifications/unread-count")
+        ? 200
+        : 404,
+      json: r.request().url().endsWith("/notifications/unread-count")
+        ? { data: { count: 0 } }
+        : {
+            error: {
+              code: "NOT_FOUND",
+              message: "Fixture endpoint unavailable",
+            },
+          },
+    }),
+  );
+  await auth(page);
+}
+async function fillNew(page: import("@playwright/test").Page) {
+  await page.getByLabel("Session date").fill(record.date);
+  await page.getByLabel("Notes", { exact: true }).fill(record.notes);
+  await page.getByRole("checkbox", { name: "Reflection" }).check();
+}
+test("unconfirmed creation blocks repeat writes until a valid empty date lookup", async ({
+  page,
+}) => {
+  await isolated(page);
+  let writes = 0,
+    lookupFails = true;
+  await page.route("**/api/v1/sessions", (r) => {
+    writes++;
+    return r.fulfill({
+      status: 201,
+      json: {
+        data: writes === 1 ? { ...record, notes: "Wrong notes" } : record,
+      },
+    });
+  });
+  await page.route("**/api/v1/sessions?**", (r) =>
+    r.fulfill(
+      lookupFails
+        ? { status: 503, json: {} }
+        : {
+            json: {
+              data: [],
+              meta: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+            },
+          },
+    ),
+  );
+  await page.route(`**/api/v1/sessions/${id}`, (r) =>
+    r.fulfill({ json: { data: record } }),
+  );
+  await page.goto("/sessions/new");
+  await fillNew(page);
+  await page.getByRole("button", { name: "Create session" }).click();
+  await expect(
+    page.getByRole("button", { name: "Create session" }),
+  ).toBeDisabled();
+  await expect(page.getByLabel("Notes", { exact: true })).toHaveValue(
+    record.notes,
+  );
+  await page.getByRole("button", { name: "Check saved state" }).click();
+  await expect(
+    page.getByRole("button", { name: "Create session" }),
+  ).toBeDisabled();
+  lookupFails = false;
+  await page.getByRole("button", { name: "Check saved state" }).click();
+  await expect(
+    page.getByRole("button", { name: "Create session" }),
+  ).toBeEnabled();
+  expect(writes).toBe(1);
+  await page.getByRole("button", { name: "Create session" }).click();
+  await expect(page).toHaveURL(`/sessions/${id}`);
+  expect(writes).toBe(2);
+});
+test("uncertain creation finds the existing date without creating another session", async ({
+  page,
+}) => {
+  await isolated(page);
+  let writes = 0;
+  await page.route("**/api/v1/sessions", (r) => {
+    writes++;
+    return r.fulfill({ status: 503, json: {} });
+  });
+  await page.route("**/api/v1/sessions?**", (r) => {
+    const params = new URL(r.request().url()).searchParams;
+    expect(params.get("from")).toBe(record.date);
+    expect(params.get("to")).toBe(record.date);
+    return r.fulfill({
+      json: {
+        data: [record],
+        meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      },
+    });
+  });
+  await page.goto("/sessions/new");
+  await fillNew(page);
+  await page.getByRole("button", { name: "Create session" }).click();
+  await page.getByRole("button", { name: "Check saved state" }).click();
+  await expect(
+    page.getByRole("link", { name: "Open saved session" }),
+  ).toHaveAttribute("href", `/sessions/${id}`);
+  await expect(
+    page.getByRole("button", { name: "Create session" }),
+  ).toBeDisabled();
+  expect(writes).toBe(1);
+});
+test("uncertain edit preserves text, blocks lifecycle writes and requires a matching status read", async ({
+  page,
+}) => {
+  await isolated(page);
+  let current = { ...record },
+    writes = 0,
+    mismatch = false;
+  await page.route(`**/api/v1/sessions/${id}`, (r) => {
+    if (r.request().method() === "PATCH") {
+      writes++;
+      current = { ...current, notes: r.request().postDataJSON().notes };
+      return r.fulfill({ status: 503, json: {} });
+    }
+    return r.fulfill({
+      json: { data: mismatch ? { ...current, id: activityId } : current },
+    });
+  });
+  await page.goto(`/sessions/${id}`);
+  await page.getByLabel("Notes", { exact: true }).fill("Retained correction");
+  await page.getByRole("button", { name: "Save session", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Save session", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Mark as cancelled" }),
+  ).toBeDisabled();
+  mismatch = true;
+  await page.getByRole("button", { name: "Check saved state" }).click();
+  await expect(
+    page.getByRole("button", { name: "Save session", exact: true }),
+  ).toBeDisabled();
+  mismatch = false;
+  await page.getByRole("button", { name: "Check saved state" }).click();
+  await expect(
+    page.getByRole("button", { name: "Save session", exact: true }),
+  ).toBeEnabled();
+  await expect(page.getByLabel("Notes", { exact: true })).toHaveValue(
+    "Retained correction",
+  );
+  await expect(page.getByText("Session saved.", { exact: true })).toHaveCount(
+    0,
+  );
+  expect(writes).toBe(1);
+});
+test("unverified cancellation and reopening require read-only reconciliation", async ({
+  page,
+}) => {
+  await isolated(page);
+  let current = { ...record },
+    reads = 0,
+    cancels = 0,
+    reopens = 0;
+  await page.route(`**/api/v1/sessions/${id}`, (r) => {
+    if (r.request().method() === "PATCH") {
+      reopens++;
+      current = { ...current, status: "HELD", cancellationReason: null };
+      return r.fulfill({
+        json: { data: { ...current, cancellationReason: "Stale reason" } },
+      });
+    }
+    reads++;
+    return r.fulfill({ json: { data: current } });
+  });
+  await page.route(`**/api/v1/sessions/${id}/cancel`, (r) => {
+    cancels++;
+    current = {
+      ...current,
+      status: "CANCELLED",
+      cancellationReason: "Closure",
+    };
+    return r.fulfill({ json: { data: record } });
+  });
+  await page.goto(`/sessions/${id}`);
+  await page.getByRole("button", { name: "Mark as cancelled" }).click();
+  await page.getByLabel("Cancellation reason").fill("Closure");
+  await page.getByRole("button", { name: "Confirm cancellation" }).click();
+  await expect(
+    page.getByRole("button", { name: "Confirm cancellation" }),
+  ).toBeDisabled();
+  await expect(page.getByLabel("Cancellation reason")).toHaveValue("Closure");
+  await expect(
+    page.getByRole("button", { name: "Save session", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Check session status" }).click();
+  await expect(
+    page.getByRole("heading", { name: `${record.date} · Cancelled` }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Mark held again" }).click();
+  await page.getByRole("button", { name: "Confirm held session" }).click();
+  await expect(
+    page.getByRole("button", { name: "Confirm held session" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Check session status" }).click();
+  await expect(
+    page.getByRole("heading", { name: `${record.date} · Held` }),
+  ).toBeVisible();
+  expect(cancels).toBe(1);
+  expect(reopens).toBe(1);
+  expect(reads).toBeGreaterThanOrEqual(3);
+});
+test("pending session writes lock both forms and ignore duplicate submits", async ({
+  page,
+}) => {
+  await isolated(page);
+  let release!: () => void,
+    writes = 0;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/v1/sessions/${id}`, async (r) => {
+    if (r.request().method() === "PATCH") {
+      writes++;
+      await pending;
+      return r.fulfill({
+        json: { data: { ...record, notes: "Pending correction" } },
+      });
+    }
+    return r.fulfill({ json: { data: record } });
+  });
+  await page.goto(`/sessions/${id}`);
+  await page.getByLabel("Notes", { exact: true }).fill("Pending correction");
+  await page.getByRole("button", { name: "Save session", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Mark as cancelled" }),
+  ).toBeDisabled();
+  await expect(page.getByLabel("Notes", { exact: true })).toBeDisabled();
+  await page
+    .locator("form")
+    .filter({ has: page.getByLabel("Notes", { exact: true }) })
+    .dispatchEvent("submit");
+  expect(writes).toBe(1);
+  release();
+  await expect(page.getByText("Session saved.", { exact: true })).toBeVisible();
+  expect(writes).toBe(1);
+});
+
+test("uncertain lifecycle remains recoverable after a background status refresh remounts controls", async ({
+  page,
+}) => {
+  await isolated(page);
+  await page.clock.install({ time: new Date("2026-10-21T09:00:00Z") });
+  let current = { ...record };
+  await page.route(`**/api/v1/sessions/${id}`, (r) =>
+    r.fulfill({ json: { data: current } }),
+  );
+  await page.route(`**/api/v1/sessions/${id}/cancel`, (r) => {
+    current = {
+      ...current,
+      status: "CANCELLED",
+      cancellationReason: "Closure",
+    };
+    return r.fulfill({ status: 503, json: {} });
+  });
+  await page.goto(`/sessions/${id}`);
+  await page.getByRole("button", { name: "Mark as cancelled" }).click();
+  await page.getByLabel("Cancellation reason").fill("Closure");
+  await page.getByRole("button", { name: "Confirm cancellation" }).click();
+  await expect(
+    page.getByRole("button", { name: "Check session status" }),
+  ).toBeVisible();
+  await page.clock.fastForward(31_000);
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event("visibilitychange", { bubbles: true })),
+  );
+  await expect(
+    page.getByRole("heading", { name: `${record.date} · Cancelled` }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Mark held again" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Check session status" }).click();
+  await expect(
+    page.getByRole("button", { name: "Mark held again" }),
+  ).toBeEnabled();
+});
+
+for (const theme of ["light", "dark"])
+  test(`uncertain session creation remains readable at 320px in ${theme} theme`, async ({
+    page,
+  }) => {
+    await isolated(page);
+    await page.setViewportSize({ width: 320, height: 740 });
+    await page.addInitScript(
+      (theme) => localStorage.setItem("ilead-theme", theme),
+      theme,
+    );
+    await page.route("**/api/v1/sessions", (r) =>
+      r.fulfill({ status: 503, json: {} }),
+    );
+    await page.goto("/sessions/new");
+    await fillNew(page);
+    await page.getByRole("button", { name: "Create session" }).click();
+    await expect(
+      page.getByRole("button", { name: "Check saved state" }),
+    ).toBeVisible();
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/session-uncertain-${theme}.png`,
+      fullPage: true,
+    });
+  });
 test("session creation preserves calendar errors, sends chosen activities and opens acknowledged detail", async ({
   page,
 }) => {
