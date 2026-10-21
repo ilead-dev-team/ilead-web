@@ -67,6 +67,12 @@ async function setup(page: Page, role: User["role"] = "COORDINATOR") {
       });
     if (path === "/account-recovery")
       return route.fulfill({ json: { data: state.rows, meta } });
+    if (path === `/account-recovery/${recovery.id}`)
+      return route.fulfill({
+        json: {
+          data: { ...state.rows[0], mailboxConnected: state.mailbox.connected },
+        },
+      });
     if (path === `/account-recovery/${recovery.id}/send-reset`) {
       state.rows = [
         {
@@ -100,6 +106,84 @@ async function fillInvitation(page: Page) {
   await page.getByLabel("Password", { exact: true }).fill("Password123");
   await page.getByLabel("Confirm password").fill("Password123");
 }
+
+test("recovery notification opens exact request and refreshes after reviewed send", async ({
+  page,
+}) => {
+  const { calls } = await setup(page);
+  await page.goto(`/people/recovery?request=${recovery.id}`);
+  await expect(
+    page.getByRole("heading", { name: "Request details" }),
+  ).toBeVisible();
+  await expect(page.getByText("No delivery attempts.")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Send reset email to Invitee" })
+    .click();
+  await page.getByRole("button", { name: "Confirm send", exact: true }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Send reset email?" }),
+  ).not.toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Recovery request details" }),
+  ).toContainText("Attempts: 0");
+  expect(calls.filter((c) => c.path.endsWith("/send-reset"))).toHaveLength(1);
+  expect(calls.some((c) => c.path === "/account-recovery")).toBe(false);
+  await page.getByRole("link", { name: "Back to recovery queue" }).click();
+  await expect(page.getByRole("link", { name: "View request" })).toBeVisible();
+});
+
+test("recovery rejects invalid notification identifiers without requesting recovery data", async ({
+  page,
+}) => {
+  const { calls } = await setup(page);
+  for (const query of [
+    "request=invalid",
+    `request=${recovery.id}&request=${recovery.id}`,
+  ]) {
+    await page.goto(`/people/recovery?${query}`);
+    await expect(page.getByText(/This recovery link is invalid/)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Send reset email to Invitee" }),
+    ).toHaveCount(0);
+  }
+  expect(calls.some((c) => c.path.startsWith("/account-recovery"))).toBe(false);
+});
+
+test("recovery missing target offers queue escape and explicit retry", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto(`/people/recovery?request=${invitee.id}`);
+  await expect(
+    page.getByRole("button", { name: "Try again", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Back to recovery queue" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Request details" }),
+  ).not.toBeVisible();
+});
+
+test("recovery detail blocks sending without the acting Coordinator mailbox", async ({
+  page,
+}) => {
+  const { state, calls } = await setup(page);
+  state.mailbox.connected = false;
+  await page.goto(`/people/recovery?request=${recovery.id}`);
+  await expect(
+    page.getByRole("link", { name: "Open mailbox settings" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Send reset email to Invitee" }),
+  ).toBeDisabled();
+  state.mailbox.connected = true;
+  await page.getByRole("button", { name: "Refresh status" }).click();
+  await expect(
+    page.getByRole("button", { name: "Send reset email to Invitee" }),
+  ).toBeEnabled();
+  expect(calls.some((c) => c.path.endsWith("/send-reset"))).toBe(false);
+});
 const submitInvite = (page: Page) =>
   page.getByRole("button", { name: "Accept invitation", exact: true });
 test("invitation known rejection retains values and focus changes do not erase the form", async ({
@@ -733,6 +817,77 @@ for (const role of ["SPONSOR", "COORDINATOR"] as const)
       ...(role === "COORDINATOR" ? { classYear: "YEAR_2" } : {}),
     });
   });
+test("recovery refuses a mismatched detail response before enabling sending", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.route(`**/api/v1/account-recovery/${recovery.id}`, (route) =>
+    route.fulfill({
+      json: { data: { ...recovery, id: invitee.id, mailboxConnected: true } },
+    }),
+  );
+  await page.goto(`/people/recovery?request=${recovery.id}`);
+  await expect(
+    page.getByRole("button", { name: "Try again", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Send reset email to Invitee" }),
+  ).toHaveCount(0);
+});
+
+for (const theme of ["light", "dark"])
+  test(`recovery detail history supports narrow layouts in ${theme} theme`, async ({
+    page,
+  }) => {
+    const { state } = await setup(page);
+    state.rows = [
+      {
+        ...recovery,
+        status: "RESOLVED",
+        resolvedAt: "2026-10-20T09:30:00Z",
+        deliveries: [
+          {
+            ...delivery,
+            status: "FAILED",
+            attempts: 2,
+            lastErrorCode: "PROVIDER_UNAVAILABLE",
+          },
+          {
+            ...delivery,
+            id: invitee.id,
+            status: "ACCEPTED",
+            acceptedAt: "2026-10-20T09:05:00Z",
+          },
+        ],
+      },
+    ];
+    await page.setViewportSize({ width: 320, height: 740 });
+    await page.addInitScript(
+      (theme) => localStorage.setItem("ilead-theme", theme),
+      theme,
+    );
+    await page.goto(`/people/recovery?request=${recovery.id}`);
+    const details = page.getByRole("region", {
+      name: "Recovery request details",
+    });
+    await expect(details.getByRole("listitem")).toHaveCount(2);
+    await expect(details).toContainText("PROVIDER_UNAVAILABLE");
+    await expect(details).toContainText("Provider accepted");
+    await expect(
+      page.getByRole("button", { name: "Send reset email to Invitee" }),
+    ).toBeDisabled();
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/recovery-detail-${theme}.png`,
+      fullPage: true,
+    });
+  });
+
 for (const theme of ["light", "dark"])
   test(`invitation, mailbox and recovery reviews support narrow keyboard layouts in ${theme} theme`, async ({
     page,

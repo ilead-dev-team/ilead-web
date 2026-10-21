@@ -8,6 +8,8 @@ import {
   authorizationDestination,
   callbackInput,
   parseRecovery,
+  parseRecoveryDetail,
+  recoverySelection,
   canSendRecovery,
   recoveryAcknowledgement,
   recoveryDeliveryMessage,
@@ -22,6 +24,34 @@ import {
   delivery,
   meta,
 } from "./fixtures/account-delivery.js";
+test("recovery deep links reject malformed and repeated identifiers", () => {
+  assert.equal(recoverySelection(undefined), undefined);
+  assert.equal(recoverySelection(recovery.id), recovery.id);
+  for (const value of ["", "../mailbox", [recovery.id, recovery.id]])
+    assert.equal(recoverySelection(value), null);
+});
+test("recovery details require matching identity, mailbox state and unique delivery history", () => {
+  const data = {
+    ...recovery,
+    mailboxConnected: true,
+    deliveries: [delivery, { ...delivery, id: invitee.id, status: "FAILED" }],
+  };
+  assert.equal(parseRecoveryDetail({ data }, recovery.id).deliveries.length, 2);
+  assert.throws(() => parseRecoveryDetail({ data }, invitee.id));
+  assert.throws(() =>
+    parseRecoveryDetail(
+      { data: { ...data, mailboxConnected: undefined } },
+      recovery.id,
+    ),
+  );
+  assert.throws(() =>
+    parseRecoveryDetail(
+      { data: { ...data, deliveries: [delivery, delivery] } },
+      recovery.id,
+    ),
+  );
+  assert.throws(() => parseRecovery({ data: [data], meta }, 1));
+});
 test("account writes require the expected active Coordinator identity", async () => {
   const client = (async () => ({
     data: { id: invitee.id, role: "COORDINATOR" },

@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import {
   canSendRecovery,
   parseRecovery,
+  parseRecoveryDetail,
   recoveryAcknowledgement,
   recoveryDeliveryMessage,
   verifyCoordinatorAccount,
@@ -16,7 +17,7 @@ import { Button } from "./ui/button";
 import { containDialogFocus } from "./ui/dialog-focus";
 import { Feedback, Pending } from "./account/feedback";
 import { useSession } from "./session";
-export function Recovery() {
+export function Recovery({ requestId }: { requestId?: string | null }) {
   const user = useSession();
   const [page, setPage] = useState(1),
     [review, setReview] = useState<RecoveryRequest | null>(null);
@@ -25,13 +26,34 @@ export function Recovery() {
     trigger = useRef<HTMLButtonElement>(null),
     refreshButton = useRef<HTMLButtonElement>(null);
   const query = useQuery({
-    queryKey: ["recovery", user.id, page],
+    queryKey: [
+      "recovery",
+      user.id,
+      requestId === null ? "invalid" : (requestId ?? "queue"),
+      page,
+    ],
+    enabled: requestId !== null,
     refetchOnWindowFocus: false,
-    queryFn: async () =>
-      parseRecovery(
-        await api(`/account-recovery?page=${page}&pageSize=20`),
-        page,
-      ),
+    queryFn: async () => {
+      if (requestId) {
+        const detail = parseRecoveryDetail(
+          await api(`/account-recovery/${requestId}`),
+          requestId,
+        );
+        return {
+          data: [detail],
+          meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+          detail,
+        };
+      }
+      return {
+        ...parseRecovery(
+          await api(`/account-recovery?page=${page}&pageSize=20`),
+          page,
+        ),
+        detail: null,
+      };
+    },
   });
   function restoreFocus() {
     if (trigger.current?.isConnected && !trigger.current.disabled)
@@ -78,8 +100,77 @@ export function Recovery() {
         Send a one-hour reset link to the account’s stored email through your{" "}
         <Link href="/mailbox">connected mailbox</Link>.
       </p>
+      {requestId !== undefined && (
+        <p className="my-4">
+          <Link href="/people/recovery">Back to recovery queue</Link>
+        </p>
+      )}
+      {requestId === null && (
+        <p className="notice" role="alert">
+          This recovery link is invalid. Open the recovery queue to find the
+          request.
+        </p>
+      )}
       <Feedback error={query.error} />
-      <Pending active={query.isPending || query.isFetching} />
+      <Pending
+        active={requestId !== null && (query.isPending || query.isFetching)}
+      />
+      {query.data?.detail && !query.isError && (
+        <section
+          aria-label="Recovery request details"
+          className="my-5 rounded-lg border border-border p-4"
+        >
+          <h2 className="text-xl font-semibold">Request details</h2>
+          <p className="break-all text-sm">Request {query.data.detail.id}</p>
+          <p>
+            Issued:{" "}
+            {query.data.detail.issuedAt
+              ? `${formatPeopleTime(query.data.detail.issuedAt)} Kigali time`
+              : "Not issued"}
+          </p>
+          <p>
+            Resolved:{" "}
+            {query.data.detail.resolvedAt
+              ? `${formatPeopleTime(query.data.detail.resolvedAt)} Kigali time`
+              : "Not resolved"}
+          </p>
+          {!query.data.detail.mailboxConnected && (
+            <p className="notice">
+              Connect your mailbox before sending a reset email.{" "}
+              <Link href="/mailbox">Open mailbox settings</Link>, then refresh
+              this request.
+            </p>
+          )}
+          <h3 className="mt-4 font-semibold">Delivery history</h3>
+          {query.data.detail.deliveries.length === 0 ? (
+            <p>No delivery attempts.</p>
+          ) : (
+            <ol className="space-y-3">
+              {query.data.detail.deliveries.map((delivery) => (
+                <li
+                  key={delivery.id}
+                  className="break-words border-t border-border pt-2"
+                >
+                  <p>{recoveryDeliveryMessage(delivery.status)}</p>
+                  <p>
+                    Attempts: {delivery.attempts} · Expires{" "}
+                    {formatPeopleTime(delivery.expiresAt)} Kigali time
+                  </p>
+                  {delivery.acceptedAt && (
+                    <p>
+                      Provider accepted {formatPeopleTime(delivery.acceptedAt)}{" "}
+                      Kigali time
+                    </p>
+                  )}
+                  {delivery.lastErrorCode && (
+                    <p>Error code: {delivery.lastErrorCode}</p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
       {query.isError && (
         <Button
           disabled={busy || query.isFetching}
@@ -137,6 +228,11 @@ export function Recovery() {
                         Requested {formatPeopleTime(row.requestedAt)} Kigali
                         time
                       </p>
+                      {!requestId && (
+                        <Link href={`/people/recovery?request=${row.id}`}>
+                          View request
+                        </Link>
+                      )}
                     </td>
                     <td className="p-3">{row.status}</td>
                     <td className="p-3">
@@ -148,6 +244,7 @@ export function Recovery() {
                         disabled={
                           busy ||
                           query.isFetching ||
+                          query.data.detail?.mailboxConnected === false ||
                           !canSendRecovery(row, query.dataUpdatedAt)
                         }
                         onClick={(event) => {
@@ -166,42 +263,44 @@ export function Recovery() {
             </table>
           </div>
         ))}
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button
-          variant="outline"
-          disabled={busy || query.isFetching || page === 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          Previous
-        </Button>
-        <span>
-          Page {page}
-          {query.data && !query.isError
-            ? ` of ${Math.max(1, query.data.meta.totalPages)}`
-            : ""}
-        </span>
-        <Button
-          variant="outline"
-          disabled={
-            busy ||
-            query.isFetching ||
-            !query.data ||
-            query.isError ||
-            page >= query.data.meta.totalPages
-          }
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next
-        </Button>
-        <Button
-          ref={refreshButton}
-          variant="outline"
-          disabled={busy || query.isFetching}
-          onClick={() => query.refetch()}
-        >
-          Refresh status
-        </Button>
-      </div>
+      {requestId !== null && (
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            disabled={busy || query.isFetching || page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            Previous
+          </Button>
+          <span>
+            Page {page}
+            {query.data && !query.isError
+              ? ` of ${Math.max(1, query.data.meta.totalPages)}`
+              : ""}
+          </span>
+          <Button
+            variant="outline"
+            disabled={
+              busy ||
+              query.isFetching ||
+              !query.data ||
+              query.isError ||
+              page >= query.data.meta.totalPages
+            }
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+          <Button
+            ref={refreshButton}
+            variant="outline"
+            disabled={busy || query.isFetching}
+            onClick={() => query.refetch()}
+          >
+            Refresh status
+          </Button>
+        </div>
+      )}
       <dialog
         ref={dialog}
         aria-labelledby="send-reset-title"

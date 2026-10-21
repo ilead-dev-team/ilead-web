@@ -125,6 +125,24 @@ const recoveryRow = z.strictObject({
     .max(1),
 });
 export type RecoveryRequest = z.infer<typeof recoveryRow>;
+export function recoverySelection(value: string | string[] | undefined) {
+  if (value === undefined) return undefined;
+  return z.uuid().safeParse(value).success ? (value as string) : null;
+}
+export function parseRecoveryDetail(value: unknown, id: string) {
+  const detail = recoveryRow.extend({
+    deliveries: z.array(recoveryRow.shape.deliveries.element),
+    mailboxConnected: z.boolean(),
+  });
+  const result = z.object({ data: detail }).parse(value).data;
+  if (
+    result.id !== id ||
+    new Set(result.deliveries.map((d) => d.id)).size !==
+      result.deliveries.length
+  )
+    throw new Error("Unexpected recovery request");
+  return result;
+}
 export function parseRecovery(value: unknown, page: number) {
   const result = z
     .object({ data: z.array(recoveryRow).max(20), meta: metadata })
