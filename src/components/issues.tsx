@@ -1,16 +1,23 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useIsMutating,
+} from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import {
   categories,
   issueInput,
-  issuePage,
-  issueSchema,
+  createdIssue,
+  resolvedIssue,
+  readIssuePage,
+  uncertainIssueWrite,
   type Issue,
 } from "@/lib/issues";
 import { useSession } from "./session";
@@ -22,28 +29,37 @@ const textClass =
 function Resolve({
   issue,
   onSaved,
+  blocked,
 }: {
   issue: Issue;
-  onSaved: () => Promise<void>;
+  onSaved: (row: Issue, note: string | null) => Promise<void>;
+  blocked: boolean;
 }) {
   const [note, setNote] = useState("");
+  const writing = useRef(false);
   const mutation = useMutation({
+    mutationKey: ["issue-write"],
+    retry: false,
     mutationFn: async () =>
-      issueSchema.parse(
-        (
-          await api<{ data: unknown }>(`/issues/${issue.id}/resolve`, {
-            method: "POST",
-            body: { resolutionNote: note.trim() || null },
-          })
-        ).data,
+      resolvedIssue(
+        await api(`/issues/${issue.id}/resolve`, {
+          method: "POST",
+          body: { resolutionNote: note.trim() || null },
+        }),
+        issue,
       ),
-    onSuccess: onSaved,
+    onSuccess: (row) => onSaved(row, note.trim() || null),
+    onSettled: () => {
+      writing.current = false;
+    },
   });
   return (
     <form
       className="mt-4 border-t border-border pt-4"
       onSubmit={(event) => {
         event.preventDefault();
+        if (writing.current || blocked || mutation.isSuccess) return;
+        writing.current = true;
         mutation.mutate();
       }}
     >
@@ -53,17 +69,33 @@ function Resolve({
           className={textClass}
           value={note}
           maxLength={5000}
-          disabled={mutation.isPending || mutation.isSuccess}
+          disabled={
+            blocked ||
+            mutation.isPending ||
+            mutation.isSuccess ||
+            (uncertainIssueWrite(mutation.error) && mutation.isError)
+          }
           onChange={(event) => setNote(event.target.value)}
         />
       </Field>
       <Feedback error={mutation.error} />
+      {mutation.isError && uncertainIssueWrite(mutation.error) && (
+        <p className="notice">
+          Resolution is unconfirmed. Your note is retained. Retry resolution
+          checks or completes the same operation; an existing resolution is
+          returned unchanged.
+        </p>
+      )}
       <Pending active={mutation.isPending} />
       {mutation.isSuccess ? (
         <p role="status">Issue resolved.</p>
       ) : (
-        <Button disabled={mutation.isPending} type="submit">
-          {mutation.isPending ? "Resolving…" : "Resolve issue"}
+        <Button disabled={blocked || mutation.isPending} type="submit">
+          {mutation.isPending
+            ? "Resolving…"
+            : mutation.isError && uncertainIssueWrite(mutation.error)
+              ? "Retry resolution"
+              : "Resolve issue"}
         </Button>
       )}
     </form>
@@ -77,39 +109,88 @@ export function Issues() {
   const eligible =
     user.role === "COORDINATOR" ||
     (user.role === "FACILITATOR" && user.hasRoundtable);
+  const [notice, setNotice] = useState("");
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [refreshError, setRefreshError] = useState<unknown>(null);
+  const [uncertain, setUncertain] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const writing = useRef(false);
+  const writes = useIsMutating({ mutationKey: ["issue-write"] });
+  const read = async (requestedPage: number, requestedStatus: typeof status) =>
+    readIssuePage(
+      await api(
+        `/issues?page=${requestedPage}&pageSize=20${requestedStatus ? `&status=${requestedStatus}` : ""}`,
+      ),
+      requestedPage,
+      requestedStatus,
+      user.role === "FACILITATOR" ? user : undefined,
+    );
   const query = useQuery({
     queryKey: ["issues", user.id, user.role, status, page],
     enabled: eligible,
-    queryFn: async () =>
-      issuePage.parse(
-        await api(
-          `/issues?page=${page}&pageSize=20${status ? `&status=${status}` : ""}`,
-        ),
-      ),
+    queryFn: () => read(page, status),
   });
   const form = useForm<z.infer<typeof issueInput>>({
     resolver: zodResolver(issueInput),
     defaultValues: { category: "WRONG_LESSON", message: "" },
   });
   const refresh = async () => {
-    await cache.invalidateQueries({ queryKey: ["issues", user.id] });
+    setRefreshError(null);
+    try {
+      await cache.invalidateQueries(
+        { queryKey: ["issues", user.id] },
+        { throwOnError: true },
+      );
+    } catch (error) {
+      setRefreshError(error);
+    }
   };
   const raise = useMutation({
+    mutationKey: ["issue-write"],
+    retry: false,
     mutationFn: async (value: z.infer<typeof issueInput>) =>
-      issueSchema.parse(
-        (
-          await api<{ data: unknown }>("/issues", {
-            method: "POST",
-            body: value,
-          })
-        ).data,
+      createdIssue(
+        await api("/issues", { method: "POST", body: value }),
+        value,
+        user,
       ),
+    onError: (error) => {
+      if (uncertainIssueWrite(error)) {
+        setUncertain(true);
+        setReviewed(false);
+      }
+    },
     onSuccess: async () => {
+      setNotice(
+        "Your issue was recorded. Coordinators have been notified in the app.",
+      );
       form.reset();
-      setPage(1);
       await refresh();
     },
+    onSettled: () => {
+      writing.current = false;
+    },
   });
+  const inspect = async () => {
+    setChecking(true);
+    setRefreshError(null);
+    try {
+      await cache.fetchQuery({
+        queryKey: ["issues", user.id, user.role, "", 1],
+        queryFn: () => read(1, ""),
+        staleTime: 0,
+      });
+      setStatus("");
+      setPage(1);
+      setReviewed(true);
+    } catch (error) {
+      setRefreshError(error);
+    } finally {
+      setChecking(false);
+    }
+  };
+  const blocked = query.isError || query.isFetching || checking || writes > 0;
   if (!eligible)
     return (
       <>
@@ -121,7 +202,7 @@ export function Issues() {
   return (
     <section className="space-y-6">
       <header>
-        <h1>
+        <h1 ref={heading} tabIndex={-1}>
           {user.role === "FACILITATOR" ? "My issues" : "Roundtable issues"}
         </h1>
         <p className="text-muted-foreground">
@@ -133,13 +214,20 @@ export function Issues() {
       {user.role === "FACILITATOR" && (
         <form
           className="rounded-xl border border-border bg-card p-6"
-          onSubmit={form.handleSubmit((value) => raise.mutate(value))}
+          onSubmit={(event) => {
+            void form.handleSubmit((value) => {
+              if (writing.current || uncertain || blocked) return;
+              writing.current = true;
+              setNotice("");
+              raise.mutate(value);
+            })(event);
+          }}
         >
           <h2 className="mb-4 text-lg font-semibold">Raise an issue</h2>
           <Field id="issue-category" label="Category">
             <Select
               id="issue-category"
-              disabled={raise.isPending}
+              disabled={raise.isPending || uncertain || blocked}
               {...form.register("category")}
             >
               {Object.entries(categories).map(([key, label]) => (
@@ -159,7 +247,7 @@ export function Issues() {
               id="issue-message"
               className={textClass}
               maxLength={5000}
-              disabled={raise.isPending}
+              disabled={raise.isPending || uncertain || blocked}
               aria-invalid={!!form.formState.errors.message}
               aria-describedby={`issue-message-help${form.formState.errors.message ? " issue-message-error" : ""}`}
               {...form.register("message")}
@@ -167,22 +255,72 @@ export function Issues() {
           </Field>
           <Feedback error={raise.error} />
           <Pending active={raise.isPending} />
-          {raise.isSuccess && (
-            <p className="notice" role="status">
-              Your issue was recorded. Coordinators have been notified in the
-              app.
-            </p>
+          {uncertain && (
+            <div className="notice space-y-3">
+              <p>
+                Sending is unconfirmed. Your text is retained. Inspect all issue
+                pages before sending anything again; a missing or matching row
+                alone does not prove what happened.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={checking || writes > 0}
+                onClick={() => void inspect()}
+              >
+                Check existing issues
+              </Button>
+              {reviewed && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={blocked}
+                  onClick={() => {
+                    setUncertain(false);
+                    setReviewed(false);
+                    raise.reset();
+                  }}
+                >
+                  I reviewed the list; allow a new issue
+                </Button>
+              )}
+            </div>
           )}
-          <Button type="submit" disabled={raise.isPending}>
+          <Button
+            type="submit"
+            disabled={raise.isPending || uncertain || blocked}
+          >
             {raise.isPending ? "Sending…" : "Send issue"}
           </Button>
         </form>
+      )}
+      {notice && (
+        <p className="notice whitespace-pre-wrap break-words" role="status">
+          {notice}
+        </p>
+      )}
+      {refreshError != null && (
+        <div className="space-y-3">
+          <p className="notice">
+            The latest issue views could not be loaded. Retrying the refresh
+            only reads issues; it does not send or resolve one again.
+          </p>
+          <Feedback error={refreshError} />
+          <Button
+            variant="outline"
+            disabled={query.isFetching || checking || writes > 0}
+            onClick={() => void refresh()}
+          >
+            Retry refreshing issues
+          </Button>
+        </div>
       )}
       <div className="max-w-xs">
         <Field id="issue-status" label="Issue status">
           <Select
             id="issue-status"
             value={status}
+            disabled={writes > 0 || checking}
             onChange={(event) => {
               setStatus(event.target.value as typeof status);
               setPage(1);
@@ -199,6 +337,21 @@ export function Issues() {
       {query.isError && (
         <Button variant="outline" onClick={() => query.refetch()}>
           Try again
+        </Button>
+      )}
+      {query.isError && query.data && (
+        <p className="notice">
+          Last loaded issues are shown. Actions are disabled until a successful
+          read.
+        </p>
+      )}
+      {!query.data && page > 1 && (
+        <Button
+          variant="outline"
+          disabled={query.isFetching || writes > 0}
+          onClick={() => setPage((value) => value - 1)}
+        >
+          Previous
         </Button>
       )}
       {query.data && (
@@ -230,7 +383,13 @@ export function Issues() {
                 </div>
                 {user.role === "COORDINATOR" && (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {issue.roundtable.name} · {issue.raisedBy.name}
+                    <Link
+                      className="underline"
+                      href={`/roundtables/${encodeURIComponent(issue.roundtable.id)}`}
+                    >
+                      {issue.roundtable.name}
+                    </Link>{" "}
+                    · {issue.raisedBy.name}
                   </p>
                 )}
                 <p className="mt-3 whitespace-pre-wrap break-words">
@@ -255,7 +414,17 @@ export function Issues() {
                   </div>
                 )}
                 {user.role === "COORDINATOR" && issue.status === "OPEN" && (
-                  <Resolve issue={issue} onSaved={refresh} />
+                  <Resolve
+                    issue={issue}
+                    blocked={blocked}
+                    onSaved={async (row, note) => {
+                      setNotice(
+                        `${row.resolvedBy?.id === user.id && row.resolutionNote === note ? "Issue resolved." : "An existing resolution was returned; your note did not replace it."} ${row.roundtable.name} · ${row.resolvedBy?.name}\n${row.resolutionNote || "Resolved without a note."}`,
+                      );
+                      await refresh();
+                      heading.current?.focus();
+                    }}
+                  />
                 )}
               </article>
             ))}
@@ -266,7 +435,7 @@ export function Issues() {
           >
             <Button
               variant="outline"
-              disabled={page <= 1 || query.isFetching}
+              disabled={page <= 1 || query.isFetching || writes > 0 || checking}
               onClick={() => setPage((value) => value - 1)}
             >
               Previous
@@ -276,7 +445,13 @@ export function Issues() {
             </span>
             <Button
               variant="outline"
-              disabled={page >= query.data.meta.totalPages || query.isFetching}
+              disabled={
+                page >= query.data.meta.totalPages ||
+                query.isFetching ||
+                query.isError ||
+                writes > 0 ||
+                checking
+              }
               onClick={() => setPage((value) => value + 1)}
             >
               Next
