@@ -8,6 +8,9 @@ import {
   authorizationDestination,
   callbackInput,
   parseRecovery,
+  parseRecoveryDetail,
+  recoverySelection,
+  recoveryReturn,
   canSendRecovery,
   recoveryAcknowledgement,
   recoveryDeliveryMessage,
@@ -22,6 +25,49 @@ import {
   delivery,
   meta,
 } from "./fixtures/account-delivery.js";
+test("recovery deep links reject malformed and repeated identifiers", () => {
+  assert.equal(recoverySelection(undefined), undefined);
+  assert.equal(recoverySelection(recovery.id), recovery.id);
+  for (const value of ["", "../mailbox", [recovery.id, recovery.id]])
+    assert.equal(recoverySelection(value), null);
+});
+test("sign-in return retains only a single safe recovery request identifier", () => {
+  const path = "/people/recovery";
+  assert.equal(
+    recoveryReturn(path, `?request=${recovery.id}`),
+    `${path}?request=${recovery.id}`,
+  );
+  for (const search of [
+    "",
+    "?request=invalid",
+    `?request=${recovery.id}&request=${recovery.id}`,
+    `?request=${recovery.id}&token=secret`,
+  ])
+    assert.equal(recoveryReturn(path, search), path);
+  assert.equal(recoveryReturn("/reports", "?token=secret"), "/reports");
+});
+test("recovery details require matching identity, mailbox state and unique delivery history", () => {
+  const data = {
+    ...recovery,
+    mailboxConnected: true,
+    deliveries: [delivery, { ...delivery, id: invitee.id, status: "FAILED" }],
+  };
+  assert.equal(parseRecoveryDetail({ data }, recovery.id).deliveries.length, 2);
+  assert.throws(() => parseRecoveryDetail({ data }, invitee.id));
+  assert.throws(() =>
+    parseRecoveryDetail(
+      { data: { ...data, mailboxConnected: undefined } },
+      recovery.id,
+    ),
+  );
+  assert.throws(() =>
+    parseRecoveryDetail(
+      { data: { ...data, deliveries: [delivery, delivery] } },
+      recovery.id,
+    ),
+  );
+  assert.throws(() => parseRecovery({ data: [data], meta }, 1));
+});
 test("account writes require the expected active Coordinator identity", async () => {
   const client = (async () => ({
     data: { id: invitee.id, role: "COORDINATOR" },

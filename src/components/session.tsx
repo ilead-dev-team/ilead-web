@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
+import { recoveryReturn } from "@/lib/account-delivery";
 import {
   userSchema,
   destination,
@@ -56,7 +57,10 @@ export function SessionGate({ children }: { children: ReactNode }) {
               "/issues",
             ].includes(path))));
   useEffect(() => {
-    if (expired) router.replace(`/login?next=${encodeURIComponent(path)}`);
+    if (expired)
+      router.replace(
+        `/login?next=${encodeURIComponent(recoveryReturn(path, window.location.search))}`,
+      );
     else if (user && !allowed) router.replace(destination(user));
   }, [expired, user, allowed, router, path]);
   if (session.isPending || expired || (user && !allowed))

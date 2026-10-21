@@ -125,6 +125,34 @@ const recoveryRow = z.strictObject({
     .max(1),
 });
 export type RecoveryRequest = z.infer<typeof recoveryRow>;
+export function recoverySelection(value: string | string[] | undefined) {
+  if (value === undefined) return undefined;
+  return z.uuid().safeParse(value).success ? (value as string) : null;
+}
+export function recoveryReturn(path: string, search: string) {
+  if (path !== "/people/recovery") return path;
+  const params = new URLSearchParams(search);
+  // A single UUID is the only notification context retained through login.
+  const values = params.getAll("request");
+  const selected = values.length === 1 ? recoverySelection(values[0]) : null;
+  return selected && [...params.keys()].length === 1
+    ? `${path}?request=${selected}`
+    : path;
+}
+export function parseRecoveryDetail(value: unknown, id: string) {
+  const detail = recoveryRow.extend({
+    deliveries: z.array(recoveryRow.shape.deliveries.element),
+    mailboxConnected: z.boolean(),
+  });
+  const result = z.object({ data: detail }).parse(value).data;
+  if (
+    result.id !== id ||
+    new Set(result.deliveries.map((d) => d.id)).size !==
+      result.deliveries.length
+  )
+    throw new Error("Unexpected recovery request");
+  return result;
+}
 export function parseRecovery(value: unknown, page: number) {
   const result = z
     .object({ data: z.array(recoveryRow).max(20), meta: metadata })
