@@ -228,7 +228,7 @@ test("delivery acknowledgements distinguish acceptance from delivery, queued, fa
     /does not confirm inbox delivery/,
   );
   assert.match(recoveryDeliveryMessage("PENDING"), /queued/);
-  assert.match(recoveryDeliveryMessage("FAILED"), /could not be sent/);
+  assert.match(recoveryDeliveryMessage("FAILED"), /could not be confirmed/);
   assert.match(recoveryDeliveryMessage("CANCELLED"), /cancelled/);
   for (const status of [0, 408, 500])
     assert.equal(
@@ -239,4 +239,28 @@ test("delivery acknowledgements distinguish acceptance from delivery, queued, fa
     unconfirmedAccountWrite(new ApiError(400, "TEST", "Test")),
     false,
   );
+});
+
+test("program sender status is distinct from personal Gmail and rejects mixed ownership", () => {
+  const shared = {
+    connected: true,
+    provider: "brevo",
+    address: "ilead@program.example.test",
+    reconnectRequired: false,
+    scope: "PROGRAM",
+  };
+  assert.equal(parseMailbox({ data: shared }).scope, "PROGRAM");
+  assert.equal(
+    parseMailbox({ data: { ...shared, connected: false, address: null } })
+      .connected,
+    false,
+  );
+  for (const change of [
+    { scope: undefined },
+    { scope: "COORDINATOR" },
+    { provider: "gmail" },
+    { reconnectRequired: true },
+    { address: null },
+  ])
+    assert.throws(() => parseMailbox({ data: { ...shared, ...change } }));
 });

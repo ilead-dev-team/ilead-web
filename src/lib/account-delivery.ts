@@ -40,14 +40,17 @@ export function acceptance(
 export const mailboxSummary = z
   .strictObject({
     connected: z.boolean(),
-    provider: z.literal("gmail").nullable(),
+    provider: z.enum(["gmail", "brevo"]).nullable(),
     address: z.email().nullable(),
     reconnectRequired: z.boolean(),
+    scope: z.enum(["PROGRAM", "COORDINATOR"]).optional(),
   })
   .refine(
     (v) =>
-      !v.connected ||
-      (!!v.address && v.provider === "gmail" && !v.reconnectRequired),
+      (v.provider !== "brevo" ||
+        (v.scope === "PROGRAM" && !v.reconnectRequired)) &&
+      (v.scope !== "PROGRAM" || v.provider === "brevo") &&
+      (!v.connected || (!!v.address && !!v.provider && !v.reconnectRequired)),
     "Invalid connected mailbox",
   );
 export function parseMailbox(value: unknown, requireConnected = false) {
@@ -198,8 +201,8 @@ export function recoveryDeliveryMessage(status: z.infer<typeof mailStatus>) {
     ACCEPTED:
       "The email provider accepted the reset email. This does not confirm inbox delivery.",
     FAILED:
-      "The reset email could not be sent. Check the connected mailbox before trying again.",
+      "The reset email could not be confirmed. Check account email status before trying again.",
     CANCELLED:
-      "The reset email was cancelled. Refresh the request and check the connected mailbox.",
+      "The reset email was cancelled. Refresh the request and check account email status.",
   }[status];
 }

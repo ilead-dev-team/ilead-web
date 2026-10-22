@@ -87,10 +87,15 @@ export function Mailbox() {
   }
   return (
     <div className="max-w-xl">
-      <h1>Connected mailbox</h1>
+      <h1>
+        {query.data?.scope === "PROGRAM"
+          ? "Program email"
+          : "Connected mailbox"}
+      </h1>
       <p className="text-muted-foreground">
-        Invitations and reset links are sent through your explicitly authorized
-        Gmail account.
+        {query.data?.scope === "PROGRAM"
+          ? "Invitations and reset links use the shared iLead sender. Coordinators do not need to connect a Google account."
+          : "Invitations and reset links are sent through your explicitly authorized Gmail account."}
       </p>
       <Pending active={query.isPending || query.isFetching || busy} />
       <Feedback error={query.error || connect.error || disconnect.error} />
@@ -116,7 +121,30 @@ export function Mailbox() {
           change. A lost response may still have completed the operation.
         </p>
       )}
-      {query.data && !query.isError && (
+      {query.data?.scope === "PROGRAM" && !query.isError && (
+        <section aria-label="Program email status" className="notice">
+          <p className="break-words">
+            {query.data.connected
+              ? `Sending configured: ${query.data.address}`
+              : "Program email is not configured or sending is disabled."}
+          </p>
+          <p>
+            The deployment custodian manages the shared sender and provider
+            access. Removing a Coordinator does not remove this sender.
+          </p>
+          <p>
+            Configuration is not proof of delivery. Provider verification and a
+            real invitation and recovery test are required before rollout.
+          </p>
+          {!query.data.connected && (
+            <p role="status">
+              Ask the deployment custodian to complete provider verification and
+              enable account email, then refresh this page.
+            </p>
+          )}
+        </section>
+      )}
+      {query.data && query.data.scope !== "PROGRAM" && !query.isError && (
         <div className="notice">
           <p className="break-words">
             {query.data.connected

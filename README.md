@@ -4,6 +4,8 @@ Production Next.js App Router application for the iLead program at Rwanda Coding
 
 ## Run locally
 
+Shared sender integration: [Program email behavior and verification limits](docs/shared-email.md).
+
 Latest delivery slice: [activity and section configuration qualification (W3.08h)](docs/configuration-qualification.md).
 
 Use Node 24 (minimum 22.13), `npm ci`, copy `.env.example` to `.env.local`, then `npm run dev`. Open http://localhost:3000. Run the backend separately on port 4000 and set its WEB_ORIGIN to http://localhost:3000. No Docker is needed. Do not migrate or seed a shared database merely to start the web app.
