@@ -270,6 +270,8 @@ const mailbox = z.object({
     connected: z.boolean(),
     address: z.email().nullable(),
     reconnectRequired: z.boolean(),
+    provider: z.enum(["gmail", "brevo"]).nullable().optional(),
+    scope: z.enum(["PROGRAM", "COORDINATOR"]).optional(),
   }),
 });
 function Invitations() {
@@ -410,8 +412,8 @@ function Invitations() {
       </div>
       <p className="text-muted-foreground">
         A single-use invitation is valid for seven days. Email is attempted
-        through the acting Coordinator’s connected mailbox; provider acceptance
-        does not prove inbox delivery.
+        through the configured account email service; provider acceptance does
+        not prove inbox delivery.
       </p>
       <Pending active={sender.isFetching} />
       {sender.isError ? (
@@ -424,12 +426,16 @@ function Invitations() {
       ) : (
         sender.data && (
           <p className="notice">
-            {sender.data.connected
-              ? `Connected mailbox: ${sender.data.address}`
-              : sender.data.reconnectRequired
-                ? "Reconnect your mailbox before sending invitation emails."
-                : "No mailbox connected. An invitation can be stored, but its email cannot be queued until you connect a mailbox and resend."}{" "}
-            <Link href="/mailbox">Manage connected mailbox</Link>
+            {sender.data.scope === "PROGRAM"
+              ? sender.data.connected
+                ? `Program sender configured: ${sender.data.address}`
+                : "Program email is unavailable or sending is disabled. Ask the deployment custodian to complete setup, then resend."
+              : sender.data.connected
+                ? `Connected mailbox: ${sender.data.address}`
+                : sender.data.reconnectRequired
+                  ? "Reconnect your mailbox before sending invitation emails."
+                  : "No mailbox connected. An invitation can be stored, but its email cannot be queued until you connect a mailbox and resend."}{" "}
+            <Link href="/mailbox">Manage account email</Link>
           </p>
         )
       )}
@@ -678,9 +684,9 @@ function Invitations() {
           </p>
           <p className="my-3 text-sm">
             {review.kind === "create"
-              ? "This grants the selected role when the recipient accepts. An email will be attempted through your connected mailbox. Check the address and role before continuing."
+              ? "This grants the selected role when the recipient accepts. An email will be attempted through the configured account email service. Check the address and role before continuing."
               : review.kind === "resend"
-                ? "This replaces the old invitation link and extends validity by seven days. The old link stops working. Another email will be attempted through your connected mailbox."
+                ? "This replaces the old invitation link and extends validity by seven days. The old link stops working. Another email will be attempted through the configured account email service."
                 : "The invitation link will stop working. Emails already accepted by the provider cannot be unsent. This does not delete an existing account."}
           </p>
           <Feedback error={action.error} />

@@ -198,14 +198,14 @@ test("recovery missing target offers queue escape and explicit retry", async ({
   ).not.toBeVisible();
 });
 
-test("recovery detail blocks sending without the acting Coordinator mailbox", async ({
+test("recovery detail blocks sending while account email is unavailable", async ({
   page,
 }) => {
   const { state, calls } = await setup(page);
   state.mailbox.connected = false;
   await page.goto(`/people/recovery?request=${recovery.id}`);
   await expect(
-    page.getByRole("link", { name: "Open mailbox settings" }),
+    page.getByRole("link", { name: "Open email settings" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Send reset email to Invitee" }),
@@ -1001,3 +1001,71 @@ for (const theme of ["light", "dark"])
       }),
     ).toBeFocused();
   });
+
+for (const theme of ["light", "dark"] as const)
+  for (const connected of [true, false]) {
+    test(`shared program email ${connected ? "configured" : "disabled"} in ${theme} never offers personal OAuth controls`, async ({
+      page,
+    }, testInfo) => {
+      await page.emulateMedia({ colorScheme: theme });
+      await page.addInitScript(
+        (value) => localStorage.setItem("ilead-theme", value),
+        theme,
+      );
+      await setup(page);
+      await page.route("**/api/v1/mailbox", (route) =>
+        route.fulfill({
+          json: {
+            data: {
+              connected,
+              provider: "brevo",
+              scope: "PROGRAM",
+              address: connected ? "ilead@program.example.test" : null,
+              reconnectRequired: false,
+            },
+          },
+        }),
+      );
+      await page.goto("/mailbox");
+      await expect(page.locator("html")).toHaveClass(
+        theme === "dark" ? /dark/ : /^(?!.*\bdark\b).*$/,
+      );
+      await expect(
+        page.getByRole("heading", { name: "Program email", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: "Program email status" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Connect Gmail", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "Disconnect mailbox", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByText("Configuration is not proof of delivery.", {
+          exact: false,
+        }),
+      ).toBeVisible();
+      if (connected)
+        await expect(
+          page.getByText("Sending configured: ilead@program.example.test"),
+        ).toBeVisible();
+      else
+        await expect(
+          page.getByText(
+            "Program email is not configured or sending is disabled.",
+          ),
+        ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Refresh mailbox", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Program email", exact: true }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: testInfo.outputPath("program-email.png"),
+        fullPage: true,
+      });
+    });
+  }

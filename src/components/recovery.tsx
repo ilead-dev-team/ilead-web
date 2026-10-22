@@ -97,8 +97,8 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
     <>
       <h1>Account recovery</h1>
       <p className="text-muted-foreground">
-        Send a one-hour reset link to the account’s stored email through your{" "}
-        <Link href="/mailbox">connected mailbox</Link>.
+        Send a one-hour reset link to the account’s stored email through the
+        configured <Link href="/mailbox">account email service</Link>.
       </p>
       {requestId !== undefined && (
         <p className="my-4">
@@ -136,8 +136,9 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
           </p>
           {!query.data.detail.mailboxConnected && (
             <p className="notice">
-              Connect your mailbox before sending a reset email.{" "}
-              <Link href="/mailbox">Open mailbox settings</Link>, then refresh
+              Account email is unavailable. Check the configured sender before
+              sending a reset email.{" "}
+              <Link href="/mailbox">Open email settings</Link>, then refresh
               this request.
             </p>
           )}
@@ -318,7 +319,7 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
         <p id="send-reset-help" className="my-4 break-words">
           Send a one-hour reset link to {review?.user.name} at{" "}
           {review?.user.email}. The recipient cannot be changed here. The email
-          uses your connected mailbox.
+          uses the configured account email service.
         </p>
         <Feedback error={send.error} />
         <Pending active={busy} />
@@ -326,7 +327,7 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
           <p className="my-3 text-sm">
             If the result was uncertain, retrying here uses the same delivery
             request. You can also cancel and refresh its status. Check your
-            mailbox connection before trying again after a delivery failure.
+            account email status before trying again after a delivery failure.
           </p>
         )}
         <div className="flex flex-wrap gap-2">
