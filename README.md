@@ -4,6 +4,8 @@ Production Next.js App Router application for the iLead program at Rwanda Coding
 
 ## Run locally
 
+Latest delivery slice: [activity and section configuration qualification (W3.08h)](docs/configuration-qualification.md).
+
 Use Node 24 (minimum 22.13), `npm ci`, copy `.env.example` to `.env.local`, then `npm run dev`. Open http://localhost:3000. Run the backend separately on port 4000 and set its WEB_ORIGIN to http://localhost:3000. No Docker is needed. Do not migrate or seed a shared database merely to start the web app.
 
 API_ORIGIN is a server-only origin, normally the Render API URL in Vercel. The browser calls relative `/api/v1` paths through a Next rewrite. Never put an access/refresh token, API secret or mailbox credentials in NEXT_PUBLIC_ variables, browser storage or frontend source. Set the backend's WEB_ORIGIN and fixed mailbox callback to the deployed web origin and `/mailbox/callback`. Remote production API origins require HTTPS. Changing the build-time rewrite target requires a new build.
