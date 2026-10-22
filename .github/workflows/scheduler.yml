@@ -1,0 +1,28 @@
+name: Program scheduler tick
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: scheduler-job-tick
+  cancel-in-progress: false
+jobs:
+  tick:
+    if: github.ref == 'refs/heads/main' && github.event.repository.private == false && vars.ENABLE_JOB_TICK == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Invoke protected job tick
+        env:
+          JOB_TICK_URL: ${{ secrets.JOB_TICK_URL }}
+          JOB_SECRET: ${{ secrets.JOB_SECRET }}
+        run: node scripts/invoke-job-tick.mjs
