@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import styles from "./reports.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ export function SessionReport({
     },
   });
   return (
-    <section className="my-5 grid gap-3 rounded-xl border border-border p-5">
+    <section className={`${styles.panel} grid gap-3`}>
       <h2>Session report</h2>
       {session.report ? (
         <Link className="underline" href={`/reports/${session.report.id}`}>
@@ -129,7 +130,7 @@ export function Reports() {
     },
   });
   return (
-    <section>
+    <section className={styles.page}>
       <h1>Reports</h1>
       <p className="mb-5 text-muted-foreground">
         {user.role === "SPONSOR"
@@ -137,7 +138,7 @@ export function Reports() {
           : "Create reports from held sessions. Only the author can edit and deliver them."}
       </p>
       <form
-        className="my-4 flex flex-wrap items-end gap-3"
+        className={styles.search}
         onSubmit={(event) => {
           event.preventDefault();
           setQ(search.trim());
@@ -204,34 +205,66 @@ export function Reports() {
       )}
       {query.data && (
         <>
-          <div className="my-6 grid gap-4 sm:grid-cols-2">
-            {query.data.data.length ? (
-              query.data.data.map((report) => (
-                <article
-                  key={report.id}
-                  className="min-w-0 break-words rounded-xl border border-border p-5"
-                >
-                  <h2>
-                    <Link className="underline" href={`/reports/${report.id}`}>
-                      {report.session.date} report
-                    </Link>
-                  </h2>
-                  <p>
-                    {report.academicYear} · {report.term.name}
-                  </p>
-                  <p>
-                    {reportLabels[report.status]} · Version {report.version}
-                  </p>
-                  <p>Author: {report.author.name}</p>
-                  {report.status === "SENT" &&
-                    report.openChangeRequests === 0 && <p>Approved</p>}
-                  <p>{report.openChangeRequests} open change requests</p>
-                </article>
-              ))
-            ) : (
-              <p>No matching reports.</p>
-            )}
-          </div>
+          {query.data.data.length ? (
+            <div
+              className={styles.tableViewport}
+              role="region"
+              aria-label="Reports list"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <caption className="sr-only">
+                  Reports · {query.data.meta.total} total
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Session</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Read</th>
+                    <th scope="col">Change requests</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {query.data.data.map((report) => (
+                    <tr key={report.id}>
+                      <th scope="row">
+                        <Link
+                          className="underline"
+                          href={`/reports/${report.id}`}
+                        >
+                          {report.session.date} report
+                        </Link>
+                        <p className={styles.supporting}>
+                          {report.academicYear} · {report.term.name}
+                        </p>
+                      </th>
+                      <td>{report.author.name}</td>
+                      <td>
+                        <span className={styles.badge}>
+                          {reportLabels[report.status]}
+                        </span>
+                        {report.status === "SENT" &&
+                          report.openChangeRequests === 0 && <p>Approved</p>}
+                      </td>
+                      <td>Version {report.version}</td>
+                      <td>
+                        {report.firstReadAt
+                          ? "Read"
+                          : report.sentAt
+                            ? "Not read yet"
+                            : "Not sent"}
+                      </td>
+                      <td>{report.openChangeRequests} open change requests</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className={styles.panel}>No matching reports.</p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
@@ -578,7 +611,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
     change(next);
   };
   return (
-    <section>
+    <section className={styles.page}>
       <h1>Session report</h1>
       <Pending active={query.isPending} />
       <Feedback error={query.error} />
@@ -587,7 +620,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
       )}
       {report && (
         <>
-          <div className="my-5 rounded-xl border border-border p-5">
+          <div className={styles.panel}>
             <h2>
               {report.session.date} · {reportLabels[report.status]}
             </h2>
@@ -626,6 +659,18 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                 edits and pause autosave until you retry. Drafts are lost when
                 navigating away.
               </p>
+              <nav aria-label="Report sections" className={styles.sectionNav}>
+                <p className="font-semibold">Report sections</p>
+                <ul>
+                  {sections.map((section) => (
+                    <li key={section.id}>
+                      <a href={`#report-section-${section.id}`}>
+                        {section.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
               <div
                 className="grid gap-5"
                 onBlur={(event) => {
@@ -645,7 +690,9 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                 {sections.map((section, index) => (
                   <article
                     key={editorKeys[section.id] ?? section.id}
-                    className="min-w-0 rounded-xl border border-border p-5"
+                    id={`report-section-${section.id}`}
+                    className={`${styles.panel} ${styles.editorSection}`}
+                    tabIndex={-1}
                   >
                     <h2>{section.title}</h2>
                     <p className="mb-3 text-sm">
@@ -712,7 +759,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                 add={(section) => change([...sections, section])}
               />
               <form
-                className="my-5 grid gap-4 rounded-xl border border-border p-5"
+                className={`${styles.panel} grid gap-4`}
                 noValidate
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -793,7 +840,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                   Add custom section
                 </Button>
               </form>
-              <details className="my-5 rounded-xl border border-border p-5">
+              <details className={styles.preview}>
                 <summary>Preview current content</summary>
                 <ReportDocument
                   report={report}
@@ -807,7 +854,14 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                   edits are still here.
                 </p>
               )}
-              <div className="my-4 flex flex-wrap gap-3">
+              <div className={styles.saveBar}>
+                <p role="status">
+                  {save.isPending
+                    ? "Save in progress"
+                    : dirty
+                      ? "Changes awaiting save"
+                      : "All changes saved"}
+                </p>
                 <Button disabled={!dirty || busy} onClick={() => saveNow(true)}>
                   Save report
                 </Button>
@@ -927,7 +981,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
             (report.archivedAt ||
               ["SENT", "CHANGES_REQUESTED"].includes(report.status)) && (
               <section
-                className="my-5 grid gap-3 rounded-xl border border-border p-5"
+                className={`${styles.panel} grid gap-3`}
                 aria-labelledby="report-archive-heading"
               >
                 <h2 id="report-archive-heading">Report archive</h2>
@@ -966,7 +1020,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
             <div
               role="group"
               aria-label={actionCopy[intent].title}
-              className="my-5 grid gap-3 rounded-xl border border-border p-5"
+              className={`${styles.panel} grid gap-3`}
             >
               <h2>{actionCopy[intent].title}</h2>
               <p>{actionCopy[intent].description}</p>

@@ -45,6 +45,16 @@ Lesson entry retains its responsive fieldsets and existing draft state. A sticky
 
 Validation:24 existing session/entry browser cases passed, including new sticky-bar assertions in the draft-retention case. The new table regression passed separately after correcting primary-link contrast; it checks entered totals, changes-requested status, held activities,320/390px containment, and light/dark axe checks. All134 logic tests passed. Desktop/light and mobile/dark table screenshots were inspected. Browser checks use fixtures; deployed acceptance remains pending.
 
+## Fifth pass: report browsing and builder ergonomics
+
+Report browsing now follows the reference table hierarchy: session/calendar, author, status, version, read state and open change requests. Read, Not read yet and Not sent derive from stored timestamps. The named keyboard-focusable table region scrolls within mobile viewports. Existing role-filtered queries and Sponsor response validation are unchanged.
+
+The builder now provides section jump links targeting mounted editors and a sticky save/discard bar with save state. This preserves existing draft state, five-second/blur autosave, failed-save recovery, mandatory sections and explicit confirm/send flow. Library, archive, feedback and version-history panels share consistent theme-token spacing and surfaces. Printable report content and export behavior are unchanged.
+
+Validation:31 of33 report browser cases passed initially; two autosave cases encountered duplicated status text introduced by the new save bar. That was corrected and all6 autosave/document cases passed on recheck. All134 logic tests passed. Type generation/TypeScript, changed-file lint, formatting and whitespace checks passed. The new report-list coverage checks delivery/read labels,320/390px scrolling and both-theme accessibility; builder coverage checks section targets and the sticky save bar.
+
+The final production build passed. Both new layout cases passed again, and desktop/light and mobile/dark list screenshots were inspected. This pass improves report navigation and saving; a simultaneous wide-screen editor/preview workspace and deployed populated journeys remain for the final layout/regression pass. Fixture checks do not establish live deployment acceptance.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.

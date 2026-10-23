@@ -1,4 +1,5 @@
 "use client";
+import styles from "./reports.module.css";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -295,7 +296,7 @@ function FeedbackFeed({ report }: { report: Report }) {
       {archived && hasDraft && (
         <section
           aria-label="Unsent discussion drafts"
-          className="grid gap-3 rounded-xl border border-border p-4"
+          className={`${styles.panel} grid gap-4`}
         >
           <h3 className="font-semibold">Unsent discussion drafts</h3>
           <p>
@@ -336,7 +337,7 @@ function FeedbackFeed({ report }: { report: Report }) {
         <p role="status">Archived report discussions are read only.</p>
       ) : (
         <form
-          className="grid gap-4 rounded-xl border border-border p-5"
+          className={`${styles.panel} grid gap-4`}
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -379,7 +380,7 @@ function FeedbackFeed({ report }: { report: Report }) {
       )}
       {user.role === "SPONSOR" && !archived && (
         <form
-          className="grid gap-4 rounded-xl border border-border p-5"
+          className={`${styles.panel} grid gap-4`}
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -465,7 +466,7 @@ function FeedbackFeed({ report }: { report: Report }) {
               query.data.data.map((comment) => (
                 <article
                   key={comment.id}
-                  className="min-w-0 rounded-xl border border-border p-5"
+                  className={`${styles.panel} grid gap-4`}
                 >
                   <CommentContent comment={comment} report={report} />
                   <div className="flex flex-wrap gap-3">
