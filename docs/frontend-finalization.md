@@ -71,6 +71,14 @@ Invitation and configuration forms use a maximum820px width,20px field gaps and 
 
 Validation:37 of38 administration browser cases passed initially; the added Program email link assertion matched both the sidebar and page header. After scoping it to page content, all17 selected recovery/mobile-review checks passed, including that case, idempotency, role denial and both-theme keyboard layouts. All134 logic tests, type generation/TypeScript, changed-file ESLint, formatting and whitespace checks passed. Desktop/light and mobile/dark people and invitation-review screenshots were inspected. Browser checks use API fixtures, not live email or deployed acceptance.
 
+## Eighth pass: remaining screens and theme defaults
+
+Curriculum lesson editors, notification/reminder cards and shared email status now use consistent panel spacing and theme surfaces. Shared email status has a readable820px maximum width. Public account forms retain their existing layout and behavior and are included in regression coverage. Standalone missing/error pages now use a narrow spaced layout and expose the theme control alongside their retry/login destination.
+
+First visits previously always selected light mode. The initial theme script now reads the device preference when no explicit light/dark choice exists, including when storage is unavailable. The toggle follows system changes until a choice is saved; explicit choices persist across reloads and synchronize both page colors and native control color-scheme across tabs. New browser checks cover these behaviors and the narrow missing-page recovery screen.
+
+Validation: all87 existing affected browser cases passed, followed by all3 new theme/missing-page cases after registering the new file in Playwright's explicit test list. All134 logic tests, type generation/TypeScript, changed-file lint, formatting and whitespace checks passed. Curriculum/mobile dark, program-email/desktop light, notifications/mobile dark and missing-page/320px dark screenshots were inspected. The generic error boundary layout compiled; no forced runtime exception was exercised. These checks use fixtures and do not establish deployed acceptance or physical push delivery.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.

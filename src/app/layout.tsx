@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "iLead" },
   icons: { apple: "/brand/push-192.png" },
 };
-const theme = `(function(){try{var d=localStorage.getItem('ilead-theme')==='dark';document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`;
+const theme = `(function(){try{var t;try{t=localStorage.getItem('ilead-theme')}catch(e){}var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`;
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
