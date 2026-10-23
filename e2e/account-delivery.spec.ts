@@ -771,7 +771,7 @@ test("mailbox cache is isolated when the current account changes within one tab"
   await expect(page.getByRole("banner")).toContainText("Second Coordinator");
   await page
     .getByRole("navigation", { name: "Main navigation" })
-    .getByRole("link", { name: "Connected mailbox", exact: true })
+    .getByRole("link", { name: "Program email", exact: true })
     .click();
   await expect(
     page.getByText("Connected: second-sender@example.test", { exact: true }),
