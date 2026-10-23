@@ -55,6 +55,14 @@ Validation:31 of33 report browser cases passed initially; two autosave cases enc
 
 The final production build passed. Both new layout cases passed again, and desktop/light and mobile/dark list screenshots were inspected. This pass improves report navigation and saving; a simultaneous wide-screen editor/preview workspace and deployed populated journeys remain for the final layout/regression pass. Fixture checks do not establish live deployment acceptance.
 
+## Sixth pass: responsive editor and live preview workspace
+
+Editable reports now show section navigation, editors and a live preview in one workspace. From1200px the editor and preview sit side by side; from1800px section navigation has its own column. The preview remains visible while scrolling, with its own bounded scroll area. Smaller screens stack the same mounted components, preserving draft state and the existing save bar. Preview content uses current working sections and the existing unsaved marker, not a new server write or stored snapshot.
+
+The institutional paper renderer and author permissions are unchanged. This closes the simultaneous editor/preview layout follow-up recorded in the fifth pass; deployed populated report journeys remain separate acceptance work.
+
+Validation:16 of18 affected browser cases passed initially. The now-visible preview duplicated editor content, requiring two editor-specific test selectors. The create/edit/confirm/send case then passed; custom-section checks passed after increasing their timeout for the larger accessibility scan. All18 affected cases therefore passed across the run and rechecks, including both-theme accessibility, autosave, unsaved preview, section-library permissions and1440px side-by-side/320–390px stacked geometry. All134 logic tests, type generation/TypeScript, changed-file lint, formatting and whitespace checks passed. Desktop/light and mobile/dark builder screenshots were inspected. These are fixture-backed checks.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.

@@ -659,195 +659,210 @@ function ReportDetailWorkspace({ id }: { id: string }) {
                 edits and pause autosave until you retry. Drafts are lost when
                 navigating away.
               </p>
-              <nav aria-label="Report sections" className={styles.sectionNav}>
-                <p className="font-semibold">Report sections</p>
-                <ul>
-                  {sections.map((section) => (
-                    <li key={section.id}>
-                      <a href={`#report-section-${section.id}`}>
-                        {section.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-              <div
-                className="grid gap-5"
-                onBlur={(event) => {
-                  if (
-                    event.target instanceof HTMLInputElement ||
-                    event.target instanceof HTMLTextAreaElement
-                  ) {
-                    if (
-                      event.relatedTarget instanceof Element &&
-                      event.relatedTarget.closest("button")
-                    )
-                      return;
-                    saveNow();
-                  }
-                }}
-              >
-                {sections.map((section, index) => (
-                  <article
-                    key={editorKeys[section.id] ?? section.id}
-                    id={`report-section-${section.id}`}
-                    className={`${styles.panel} ${styles.editorSection}`}
-                    tabIndex={-1}
-                  >
-                    <h2>{section.title}</h2>
-                    <p className="mb-3 text-sm">
-                      {section.isMandatory
-                        ? "Mandatory section"
-                        : "Optional section"}
-                    </p>
-                    <ReportSectionEditor
-                      section={section}
-                      disabled={
-                        transition.isPending || createTemplate.isPending
-                      }
-                      change={(next) =>
-                        change(
-                          sections.map((current) =>
-                            current.id === section.id ? next : current,
-                          ),
+              <div className={styles.builder}>
+                <nav aria-label="Report sections" className={styles.sectionNav}>
+                  <p className="font-semibold">Report sections</p>
+                  <ul>
+                    {sections.map((section) => (
+                      <li key={section.id}>
+                        <a href={`#report-section-${section.id}`}>
+                          {section.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+                <div className={styles.editorColumn}>
+                  <div
+                    className="grid gap-5"
+                    onBlur={(event) => {
+                      if (
+                        event.target instanceof HTMLInputElement ||
+                        event.target instanceof HTMLTextAreaElement
+                      ) {
+                        if (
+                          event.relatedTarget instanceof Element &&
+                          event.relatedTarget.closest("button")
                         )
+                          return;
+                        saveNow();
                       }
-                    />
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <Button
-                        variant="outline"
-                        disabled={busy || index <= 1}
-                        onClick={() => move(index, -1)}
-                        aria-label={`Move up ${section.title}`}
+                    }}
+                  >
+                    {sections.map((section, index) => (
+                      <article
+                        key={editorKeys[section.id] ?? section.id}
+                        id={`report-section-${section.id}`}
+                        className={`${styles.panel} ${styles.editorSection}`}
+                        tabIndex={-1}
                       >
-                        Move up
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={
-                          busy || index === 0 || index === sections.length - 1
-                        }
-                        onClick={() => move(index, 1)}
-                        aria-label={`Move down ${section.title}`}
-                      >
-                        Move down
-                      </Button>
-                      {!section.isMandatory && (
-                        <Button
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() =>
+                        <h2>{section.title}</h2>
+                        <p className="mb-3 text-sm">
+                          {section.isMandatory
+                            ? "Mandatory section"
+                            : "Optional section"}
+                        </p>
+                        <ReportSectionEditor
+                          section={section}
+                          disabled={
+                            transition.isPending || createTemplate.isPending
+                          }
+                          change={(next) =>
                             change(
-                              sections.filter(
-                                (current) => current.id !== section.id,
+                              sections.map((current) =>
+                                current.id === section.id ? next : current,
                               ),
                             )
                           }
-                          aria-label={`Remove section ${section.title}`}
-                        >
-                          Remove section
-                        </Button>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <ReportLibrary
-                key={`${id}-${user.id}-${user.role}`}
-                sections={sections}
-                disabled={busy}
-                add={(section) => change([...sections, section])}
-              />
-              <form
-                className={`${styles.panel} grid gap-4`}
-                noValidate
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (
-                    !customTitle.trim() ||
-                    customTitle.trim().length > 120 ||
-                    sections.length >= 30
-                  ) {
-                    setInvalid(
-                      "Enter a title up to 120 characters; reports allow at most 30 sections.",
-                    );
-                    return;
-                  }
-                  setInvalid(undefined);
-                  setNotice("");
-                  createTemplate.reset();
-                  if (saveToLibrary) {
-                    createTemplate.mutate({
-                      title: customTitle.trim(),
-                      kind: customKind,
-                    });
-                  } else {
-                    change([
-                      ...sections,
-                      newReportSection(
-                        customTitle,
-                        customKind,
-                        sections.length + 1,
-                      ),
-                    ]);
-                    setCustomTitle("");
-                  }
-                }}
-              >
-                <h2>Add a one-off section</h2>
-                <Field id="custom-title" label="Section title">
-                  <Input
-                    id="custom-title"
-                    maxLength={120}
-                    value={customTitle}
-                    disabled={transition.isPending || createTemplate.isPending}
-                    onChange={(event) => setCustomTitle(event.target.value)}
+                        />
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <Button
+                            variant="outline"
+                            disabled={busy || index <= 1}
+                            onClick={() => move(index, -1)}
+                            aria-label={`Move up ${section.title}`}
+                          >
+                            Move up
+                          </Button>
+                          <Button
+                            variant="outline"
+                            disabled={
+                              busy ||
+                              index === 0 ||
+                              index === sections.length - 1
+                            }
+                            onClick={() => move(index, 1)}
+                            aria-label={`Move down ${section.title}`}
+                          >
+                            Move down
+                          </Button>
+                          {!section.isMandatory && (
+                            <Button
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() =>
+                                change(
+                                  sections.filter(
+                                    (current) => current.id !== section.id,
+                                  ),
+                                )
+                              }
+                              aria-label={`Remove section ${section.title}`}
+                            >
+                              Remove section
+                            </Button>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  <ReportLibrary
+                    key={`${id}-${user.id}-${user.role}`}
+                    sections={sections}
+                    disabled={busy}
+                    add={(section) => change([...sections, section])}
                   />
-                </Field>
-                <Field id="custom-kind" label="Section kind">
-                  <Select
-                    id="custom-kind"
-                    value={customKind}
-                    disabled={transition.isPending || createTemplate.isPending}
-                    onChange={(event) => setCustomKind(event.target.value)}
-                  >
-                    <option value="TEXT">Text</option>
-                    <option value="BULLETS">Bullet list</option>
-                    <option value="TABLE">Table</option>
-                  </Select>
-                </Field>
-                <label className="flex min-h-11 items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={saveToLibrary}
-                    disabled={transition.isPending || createTemplate.isPending}
-                    onChange={(event) => {
-                      setSaveToLibrary(event.target.checked);
+                  <form
+                    className={`${styles.panel} grid gap-4`}
+                    noValidate
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (
+                        !customTitle.trim() ||
+                        customTitle.trim().length > 120 ||
+                        sections.length >= 30
+                      ) {
+                        setInvalid(
+                          "Enter a title up to 120 characters; reports allow at most 30 sections.",
+                        );
+                        return;
+                      }
+                      setInvalid(undefined);
+                      setNotice("");
                       createTemplate.reset();
+                      if (saveToLibrary) {
+                        createTemplate.mutate({
+                          title: customTitle.trim(),
+                          kind: customKind,
+                        });
+                      } else {
+                        change([
+                          ...sections,
+                          newReportSection(
+                            customTitle,
+                            customKind,
+                            sections.length + 1,
+                          ),
+                        ]);
+                        setCustomTitle("");
+                      }
                     }}
+                  >
+                    <h2>Add a one-off section</h2>
+                    <Field id="custom-title" label="Section title">
+                      <Input
+                        id="custom-title"
+                        maxLength={120}
+                        value={customTitle}
+                        disabled={
+                          transition.isPending || createTemplate.isPending
+                        }
+                        onChange={(event) => setCustomTitle(event.target.value)}
+                      />
+                    </Field>
+                    <Field id="custom-kind" label="Section kind">
+                      <Select
+                        id="custom-kind"
+                        value={customKind}
+                        disabled={
+                          transition.isPending || createTemplate.isPending
+                        }
+                        onChange={(event) => setCustomKind(event.target.value)}
+                      >
+                        <option value="TEXT">Text</option>
+                        <option value="BULLETS">Bullet list</option>
+                        <option value="TABLE">Table</option>
+                      </Select>
+                    </Field>
+                    <label className="flex min-h-11 items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={saveToLibrary}
+                        disabled={
+                          transition.isPending || createTemplate.isPending
+                        }
+                        onChange={(event) => {
+                          setSaveToLibrary(event.target.checked);
+                          createTemplate.reset();
+                        }}
+                      />
+                      Save section structure to library
+                    </label>
+                    <p className="text-sm text-muted-foreground">
+                      The library saves the title and section type, not report
+                      text. New custom templates are available for selection in
+                      future reports and are never preselected. Creating a
+                      library template is separate from saving this report.
+                    </p>
+                    <Feedback error={createTemplate.error} />
+                    <Pending active={createTemplate.isPending} />
+                    <Button disabled={busy || sections.length >= 30}>
+                      Add custom section
+                    </Button>
+                  </form>
+                </div>
+                <section
+                  className={styles.preview}
+                  aria-labelledby="working-preview-heading"
+                >
+                  <h2 id="working-preview-heading">Preview current content</h2>
+                  <ReportDocument
+                    report={report}
+                    workingSections={sections}
+                    unsaved={dirty}
                   />
-                  Save section structure to library
-                </label>
-                <p className="text-sm text-muted-foreground">
-                  The library saves the title and section type, not report text.
-                  New custom templates are available for selection in future
-                  reports and are never preselected. Creating a library template
-                  is separate from saving this report.
-                </p>
-                <Feedback error={createTemplate.error} />
-                <Pending active={createTemplate.isPending} />
-                <Button disabled={busy || sections.length >= 30}>
-                  Add custom section
-                </Button>
-              </form>
-              <details className={styles.preview}>
-                <summary>Preview current content</summary>
-                <ReportDocument
-                  report={report}
-                  workingSections={sections}
-                  unsaved={dirty}
-                />
-              </details>
+                </section>
+              </div>
               {autosavePaused && !save.isPending && (
                 <p role="status">
                   Not saved — autosave is paused. Use Save report to retry. Your
