@@ -153,6 +153,15 @@ test("drafts survive pages and filters, failed save preserves all rows, and only
     page.getByText("2 unsaved rows, including other pages and filters."),
   ).toBeVisible();
   await expect(
+    page.getByText("2 roundtables with unsaved changes", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }),
+  ).toHaveCSS("position", "static");
+  await expect(
+    page.getByRole("button", { name: "Save changed entries" }).locator(".."),
+  ).toHaveCSS("position", "sticky");
+  await expect(
     page
       .getByRole("group", { name: "Summits", exact: true })
       .getByLabel("Attendance"),

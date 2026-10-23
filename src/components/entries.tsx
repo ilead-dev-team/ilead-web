@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import styles from "./sessions.module.css";
 import { api, ApiError } from "@/lib/api";
 import { curriculumResponse } from "@/lib/curriculum";
 import { levelLabels } from "@/lib/roundtables";
@@ -215,7 +216,7 @@ export function Entries({
     else mutation.mutate({ values, confirmed: [] });
   };
   return (
-    <section aria-labelledby="entries-heading" className="my-7">
+    <section aria-labelledby="entries-heading" className={styles.entries}>
       <h2 ref={heading} tabIndex={-1} id="entries-heading">
         Attendance and lesson entries
       </h2>
@@ -331,7 +332,7 @@ export function Entries({
               return (
                 <fieldset
                   key={id}
-                  className="min-w-0 rounded-xl border border-border p-4"
+                  className={styles.entryRow}
                   disabled={mutation.isPending || !ready}
                 >
                   <legend className="break-words px-2 font-semibold">
@@ -584,21 +585,28 @@ export function Entries({
           </Button>
         </div>
       </dialog>
-      <Pending active={mutation.isPending} />
-      <Button
-        ref={saveButton}
-        disabled={
-          !count ||
-          mutation.isPending ||
-          !ready ||
-          review.length > 0 ||
-          refresh.isPending
-        }
-        onClick={save}
-      >
-        Save changed entries
-      </Button>
-      {saved && <p role="status">Entries saved.</p>}
+      <div className={styles.saveBar}>
+        <p role="status">
+          {count
+            ? `${count} roundtable${count === 1 ? "" : "s"} with unsaved changes`
+            : "No unsaved entry changes"}
+        </p>
+        <Pending active={mutation.isPending} />
+        <Button
+          ref={saveButton}
+          disabled={
+            !count ||
+            mutation.isPending ||
+            !ready ||
+            review.length > 0 ||
+            refresh.isPending
+          }
+          onClick={save}
+        >
+          Save changed entries
+        </Button>
+        {saved && <p role="status">Entries saved.</p>}
+      </div>
       <Feedback error={refresh.error} />
       {refresh.isError && (
         <Button

@@ -546,3 +546,55 @@ test("Sponsor and Facilitator cannot open Coordinator session screens", async ({
   }
   expect(reads).toBe(0);
 });
+
+test("session table shows entry totals and report state with contained mobile scrolling", async ({
+  page,
+}, testInfo) => {
+  await isolated(page);
+  await page.route("**/api/v1/sessions?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [
+          {
+            ...record,
+            counts: { roundtables: 4, met: 2, notMet: 1, pending: 1 },
+            report: { id: "report", status: "CHANGES_REQUESTED" },
+          },
+        ],
+        meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      },
+    }),
+  );
+  await page.goto("/sessions");
+  const table = page.getByRole("region", { name: "Sessions list" });
+  await expect(table.getByText("3 of 4 entered")).toBeVisible();
+  await expect(
+    table.getByText("Changes requested", { exact: true }),
+  ).toBeVisible();
+  await expect(table.getByText("Reflection", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "New session", exact: true }),
+  ).toHaveAttribute("href", "/sessions/new");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath("sessions-desktop.png"),
+    fullPage: true,
+  });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect(await table.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(
+      true,
+    );
+  }
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath("sessions-mobile-dark.png"),
+    fullPage: true,
+  });
+});
