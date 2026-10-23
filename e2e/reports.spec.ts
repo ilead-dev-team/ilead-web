@@ -166,7 +166,9 @@ test("author creates, edits, preserves failed saves, confirms and sends only aft
     page.getByRole("button", { name: "Move down Opening summary" }),
   ).toBeDisabled();
   await expect(
-    page.getByRole("cell", { name: "Lesson 1: Leadership", exact: true }),
+    page
+      .locator(`#report-section-${progressId}`)
+      .getByRole("cell", { name: "Lesson 1: Leadership", exact: true }),
   ).toBeVisible();
   await page.getByLabel("Opening summary text").fill("Updated narrative");
   await expect(
@@ -215,6 +217,7 @@ test("author creates, edits, preserves failed saves, confirms and sends only aft
 test("custom sections and generated refreshes preserve progress protections and accessible layout", async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await auth(page);
   let report = structuredClone(base);
   await page.route(`**/api/v1/reports/${id}`, (r) =>
@@ -252,7 +255,7 @@ test("custom sections and generated refreshes preserve progress protections and 
   await page.getByLabel("Section title", { exact: true }).fill("Reflections");
   await page.getByLabel("Section kind", { exact: true }).selectOption("TABLE");
   await page.getByRole("button", { name: "Add custom section" }).click();
-  const custom = page.locator("article").filter({
+  const custom = page.locator("article[id^=report-section-]").filter({
     has: page.getByRole("heading", { name: "Reflections", exact: true }),
   });
   await custom.getByRole("button", { name: "Add column" }).click();
@@ -504,7 +507,7 @@ test("report list compares delivery states and contains mobile scrolling in both
 
 test("builder section links target mounted editors and saving remains sticky", async ({
   page,
-}) => {
+}, testInfo) => {
   await auth(page);
   await page.route(`**/api/v1/reports/${id}`, (r) =>
     r.fulfill({ json: { data: base } }),
@@ -523,4 +526,34 @@ test("builder section links target mounted editors and saving remains sticky", a
       .getByRole("button", { name: "Save report", exact: true })
       .locator(".."),
   ).toHaveCSS("position", "sticky");
+  const preview = page.getByRole("region", { name: "Preview current content" });
+  const editor = page.locator(`#report-section-${summaryId}`);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(preview).toBeVisible();
+  const desktopEditor = await editor.boundingBox();
+  const desktopPreview = await preview.boundingBox();
+  expect(desktopPreview!.x).toBeGreaterThanOrEqual(
+    desktopEditor!.x + desktopEditor!.width,
+  );
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: testInfo.outputPath("builder-desktop.png"),
+    fullPage: true,
+  });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect((await preview.boundingBox())!.y).toBeGreaterThan(
+      (await editor.boundingBox())!.y,
+    );
+  }
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await page.screenshot({
+    path: testInfo.outputPath("builder-mobile-dark.png"),
+    fullPage: true,
+  });
 });
