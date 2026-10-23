@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import styles from "./sessions.module.css";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -155,7 +156,7 @@ function SessionForm({
   const locked = busy || needsCheck;
   return (
     <form
-      className="my-6 grid max-w-2xl gap-4 rounded-xl border border-border p-5"
+      className={`${styles.panel} ${styles.form}`}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -364,7 +365,7 @@ function SessionLifecycle({
   });
   const busy = mutation.isPending || writes > 0 || check.isPending;
   return (
-    <div className="my-6 rounded-xl border border-border p-5">
+    <div className={styles.panel}>
       <h2>{row.status === "HELD" ? "Cancel session" : "Reopen session"}</h2>
       <p>
         {row.status === "HELD"
@@ -509,16 +510,20 @@ export function Sessions() {
     },
   });
   return (
-    <section>
+    <section className={styles.page}>
       <h1>Sessions</h1>
       <p className="mb-5 text-muted-foreground">
         Record held sessions and inspect entry completion. Cancellation retains
         the session with its reason.
       </p>
-      <Link className="underline" href="/sessions/new">
+      <Link
+        data-slot="button"
+        className={styles.primaryAction}
+        href="/sessions/new"
+      >
         New session
       </Link>
-      <div className="my-5 grid gap-4 sm:grid-cols-2">
+      <div className={styles.calendarFilters}>
         <Field id="sessions-year" label="Academic year">
           <Select
             id="sessions-year"
@@ -594,7 +599,7 @@ export function Sessions() {
         </Button>
       )}
       <form
-        className="my-5 grid gap-4 sm:grid-cols-3"
+        className={styles.dateFilters}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -652,37 +657,88 @@ export function Sessions() {
       )}
       {query.data && (
         <>
-          <div className="my-6 grid gap-4 sm:grid-cols-2">
-            {query.data.data.length ? (
-              query.data.data.map((row) => (
-                <article
-                  key={row.id}
-                  className="rounded-xl border border-border p-5"
-                >
-                  <h2>
-                    <Link className="underline" href={`/sessions/${row.id}`}>
-                      {row.date}
-                    </Link>
-                  </h2>
-                  <p>
-                    {row.status === "HELD" ? "Held" : "Cancelled"} ·{" "}
-                    {row.academicYear.label} · {row.term.name}
-                  </p>
-                  <p>
-                    {row.counts.met} met · {row.counts.notMet} did not meet ·{" "}
-                    {row.counts.pending} pending
-                  </p>
-                  {row.cancellationReason && (
-                    <p className="break-words">
-                      Reason: {row.cancellationReason}
-                    </p>
-                  )}
-                </article>
-              ))
-            ) : (
-              <p>No matching sessions.</p>
-            )}
-          </div>
+          {query.data.data.length ? (
+            <div
+              className={styles.tableViewport}
+              role="region"
+              aria-label="Sessions list"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <caption className="sr-only">
+                  Sessions · {query.data.meta.total} total
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Session date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Academic calendar</th>
+                    <th scope="col">Activities held</th>
+                    <th scope="col">Entries</th>
+                    <th scope="col">Report</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {query.data.data.map((row) => (
+                    <tr key={row.id}>
+                      <th scope="row">
+                        <Link
+                          className="underline"
+                          href={`/sessions/${row.id}`}
+                        >
+                          {row.date}
+                        </Link>
+                      </th>
+                      <td>
+                        <span className={styles.badge}>
+                          {row.status === "HELD" ? "Held" : "Cancelled"}
+                        </span>
+                        {row.cancellationReason && (
+                          <p className="break-words">
+                            Reason: {row.cancellationReason}
+                          </p>
+                        )}
+                      </td>
+                      <td>
+                        {row.academicYear.label}
+                        <br />
+                        {row.term.name}
+                      </td>
+                      <td>
+                        {row.activities
+                          .filter((a) => a.held)
+                          .map((a) => a.name)
+                          .join(", ") || "None recorded"}
+                      </td>
+                      <td>
+                        <p>
+                          {row.counts.met + row.counts.notMet} of{" "}
+                          {row.counts.roundtables} entered
+                        </p>
+                        <p className={styles.supporting}>
+                          {row.counts.met} met · {row.counts.notMet} did not
+                          meet · {row.counts.pending} pending
+                        </p>
+                      </td>
+                      <td>
+                        {row.report
+                          ? row.report.status === "DRAFT"
+                            ? "Draft"
+                            : row.report.status === "FINAL"
+                              ? "Final"
+                              : row.report.status === "CHANGES_REQUESTED"
+                                ? "Changes requested"
+                                : "Sent"
+                          : "No report"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className={styles.panel}>No matching sessions.</p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
@@ -709,7 +765,7 @@ export function Sessions() {
 }
 export function NewSession() {
   return (
-    <section>
+    <section className={styles.page}>
       <h1>New session</h1>
       <p>
         Choose a date covered by the configured academic calendar. A new session
@@ -730,7 +786,7 @@ export function SessionDetail({ id }: { id: string }) {
   });
   const row = query.data;
   return (
-    <section>
+    <section className={styles.page}>
       <h1>Session details</h1>
       <Pending active={query.isPending} />
       <Feedback error={query.error} />
@@ -739,7 +795,7 @@ export function SessionDetail({ id }: { id: string }) {
       )}
       {row && (
         <>
-          <div className="my-5 rounded-xl border border-border p-5">
+          <div className={styles.panel}>
             <h2>
               {row.date} · {row.status === "HELD" ? "Held" : "Cancelled"}
             </h2>

@@ -37,11 +37,19 @@ Validation: all38 affected account, roundtable and issue browser tests and all13
 
 These checks use API fixtures. Deployed populated journeys and physical-device push acceptance remain separate work.
 
+## Fourth pass: sessions and lesson entry
+
+The session list now uses a semantic table with date, status, academic calendar, held activities, entered/total roundtables and report state. Changes requested remains distinct from Sent. A named keyboard-focusable scrolling panel keeps the wide comparison table inside mobile viewports. New session is a primary action; date/calendar filters and create/edit/cancel panels use consistent token-based surfaces and spacing.
+
+Lesson entry retains its responsive fieldsets and existing draft state. A sticky save bar now shows the number of roundtables with unsaved changes and keeps the existing save action available while scrolling. Existing confirmation dialogs, failed-save retention, cross-page drafts, read-only reconciliation and lifecycle locks remain unchanged.
+
+Validation:24 existing session/entry browser cases passed, including new sticky-bar assertions in the draft-retention case. The new table regression passed separately after correcting primary-link contrast; it checks entered totals, changes-requested status, held activities,320/390px containment, and light/dark axe checks. All134 logic tests passed. Desktop/light and mobile/dark table screenshots were inspected. Browser checks use fixtures; deployed acceptance remains pending.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.
 2. Roundtable registration, own/detail/list views and issue flows: implemented and locally verified in the third pass; include in deployed regression.
-3. Session lists, creation/cancellation and bulk lesson entry, including retained unsaved edits.
+3. Session lists, creation/cancellation and bulk lesson entry: fourth-pass layouts locally verified; include in deployed regression.
 4. Report library, builder, final/send flow, sent document reading, feedback and version history.
 5. People/invitations, recovery, calendar, curriculum and program settings.
 6. Notifications and shared email status, then public account/error/expired-link states.
