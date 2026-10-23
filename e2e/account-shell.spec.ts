@@ -62,6 +62,44 @@ async function fill(page: Page) {
     .getByLabel("Confirm new password", { exact: true })
     .fill("Replacement456");
 }
+
+test("workspace header fits narrow screens and matches approved breakpoints", async ({
+  page,
+}) => {
+  await setup(page);
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await page.getByRole("banner").boundingBox();
+    expect(box?.height).toBe(width < 768 ? 68 : 76);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+    const menu = page.getByRole("button", { name: "Menu", exact: true });
+    if (width < 768) await expect(menu).toBeVisible();
+    else await expect(menu).not.toBeVisible();
+    for (const name of ["Log out", "Notifications, 0 unread"]) {
+      const bounds = await page
+        .getByRole("button", { name, exact: true })
+        .boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    }
+  }
+  await expect(
+    page.getByRole("link", { name: "Program email", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/workspace-desktop.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: /Switch to .* mode/ }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "test-results/workspace-mobile-other-theme.png",
+    fullPage: true,
+  });
+});
 test("password success sends only two API fields, clears secrets and requires sign-in", async ({
   page,
 }) => {
@@ -316,7 +354,7 @@ test("navigation contains keyboard focus, closes on navigation and marks the act
   const nav = page.getByRole("dialog", { name: "Navigation", exact: true });
   await page.keyboard.press("Shift+Tab");
   await expect(
-    nav.getByRole("link", { name: "People", exact: true }),
+    nav.getByRole("link", { name: "Section library", exact: true }),
   ).toBeFocused();
   await nav.getByRole("link", { name: "Roundtables", exact: true }).click();
   await expect(page).toHaveURL(/\/roundtables$/);

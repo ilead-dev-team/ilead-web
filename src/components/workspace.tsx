@@ -1,5 +1,25 @@
 "use client";
 import Link from "next/link";
+import {
+  LayoutDashboard,
+  CircleUserRound,
+  UsersRound,
+  FileText,
+  BookOpen,
+  CalendarDays,
+  ListChecks,
+  CalendarRange,
+  PanelsTopLeft,
+  Mail,
+  KeyRound,
+  Users,
+  CircleHelp,
+  Menu,
+  LogOut,
+  ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
+import styles from "./workspace.module.css";
 import { useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,22 +51,35 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
     [pending, setPending] = useState(false);
   return (
     <>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6">
+      <header className={styles.header}>
         <Button
           ref={menu}
           variant="outline"
-          className="lg:hidden"
+          className={styles.menuButton}
+          aria-label="Menu"
           aria-haspopup="dialog"
           onClick={() => drawer.current?.showModal()}
         >
-          Menu
+          <Menu aria-hidden size={20} />
         </Button>
-        <Brand />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={styles.brand}>
+          <Brand />
+        </div>
+        <div className={styles.context}>
+          <span>iLead workspace</span>
+          <strong>
+            {user.role === "COORDINATOR"
+              ? "Coordinator"
+              : user.role === "SPONSOR"
+                ? "Sponsor"
+                : "Facilitator"}
+          </strong>
+        </div>
+        <div className={styles.actions}>
           <ThemeToggle />
           <NotificationBell key={`${user.id}:${user.role}`} />
           <details
-            className="relative"
+            className={styles.account}
             onKeyDown={(event) => {
               if (
                 event.key === "Escape" &&
@@ -57,10 +90,12 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
               }
             }}
           >
-            <summary className="flex min-h-11 cursor-pointer items-center rounded-lg border border-border px-3 text-sm font-semibold">
-              Account
+            <summary className={styles.accountTrigger}>
+              <CircleUserRound aria-hidden size={20} />
+              <span>Account</span>
+              <ChevronDown className={styles.chevron} aria-hidden size={14} />
             </summary>
-            <div className="fixed inset-x-4 top-36 z-30 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-64">
+            <div className={styles.accountPanel}>
               <p className="break-words font-semibold">{user.name}</p>
               <p className="break-words text-sm text-muted-foreground">
                 {user.email}
@@ -73,6 +108,8 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
           </details>
           <Button
             variant="outline"
+            aria-label="Log out"
+            className={styles.logout}
             disabled={pending || push.busy}
             onClick={async () => {
               setPending(true);
@@ -88,15 +125,19 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
               }
             }}
           >
-            Log out
+            <LogOut aria-hidden size={18} />
+            <span>Log out</span>
           </Button>
         </div>
       </header>
-      <div className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
-        <aside className="hidden min-h-[calc(100dvh-76px)] border-r border-border bg-sidebar p-4 text-sidebar-foreground lg:block">
+      <div className={styles.layout}>
+        <aside className={styles.sidebar}>
           <WorkspaceLinks />
         </aside>
-        <main id="main" className="workspace min-w-0 w-full">
+        <main
+          id="main"
+          className={`workspace min-w-0 w-full ${styles.content}`}
+        >
           <Feedback error={error} />
           {children}
         </main>
@@ -121,62 +162,92 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
     </>
   );
 }
+type NavigationItem = { href: string; label: string; icon: LucideIcon };
 function WorkspaceLinks({ onNavigate }: { onNavigate?: () => void }) {
   const user = useSession();
+  const program: NavigationItem[] = [
+    {
+      href:
+        user.role === "FACILITATOR"
+          ? user.hasRoundtable
+            ? "/my-roundtable"
+            : "/register-roundtable"
+          : "/dashboard",
+      label: "Workspace",
+      icon: LayoutDashboard,
+    },
+  ];
+  if (user.role !== "FACILITATOR")
+    program.push(
+      { href: "/roundtables", label: "Roundtables", icon: UsersRound },
+      ...(user.role === "COORDINATOR"
+        ? [{ href: "/sessions", label: "Sessions", icon: CalendarDays }]
+        : []),
+      { href: "/reports", label: "Reports", icon: FileText },
+      { href: "/curriculum", label: "Curriculum", icon: BookOpen },
+    );
+  if (
+    user.role === "COORDINATOR" ||
+    (user.role === "FACILITATOR" && user.hasRoundtable)
+  )
+    program.push({ href: "/issues", label: "Issues", icon: CircleHelp });
+  const administration: NavigationItem[] =
+    user.role === "COORDINATOR"
+      ? [
+          { href: "/people", label: "People", icon: Users },
+          {
+            href: "/people/recovery",
+            label: "Account recovery",
+            icon: KeyRound,
+          },
+          { href: "/mailbox", label: "Program email", icon: Mail },
+          {
+            href: "/settings/academic-years",
+            label: "Academic years",
+            icon: CalendarRange,
+          },
+          {
+            href: "/settings/activities",
+            label: "Activity types",
+            icon: ListChecks,
+          },
+          {
+            href: "/settings/sections",
+            label: "Section library",
+            icon: PanelsTopLeft,
+          },
+        ]
+      : [];
   return (
     <nav
       aria-label="Main navigation"
-      className="flex flex-col gap-1"
+      className={styles.navigation}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("a")) onNavigate?.();
       }}
     >
-      <NavigationLink
-        href={
-          user.role === "FACILITATOR"
-            ? user.hasRoundtable
-              ? "/my-roundtable"
-              : "/register-roundtable"
-            : "/dashboard"
-        }
-      >
-        Workspace
-      </NavigationLink>
-      {(user.role === "COORDINATOR" ||
-        (user.role === "FACILITATOR" && user.hasRoundtable)) && (
-        <NavigationLink href="/issues">Issues</NavigationLink>
-      )}
-      {user.role !== "FACILITATOR" && (
-        <>
-          <NavigationLink href="/roundtables">Roundtables</NavigationLink>
-          <NavigationLink href="/reports">Reports</NavigationLink>
-          <NavigationLink href="/curriculum">Curriculum</NavigationLink>
-        </>
-      )}
-      {user.role === "COORDINATOR" && (
-        <>
-          <NavigationLink href="/sessions">Sessions</NavigationLink>
-          <NavigationLink href="/settings/activities">
-            Activity types
-          </NavigationLink>
-          <NavigationLink href="/settings/academic-years">
-            Academic years
-          </NavigationLink>
-          <NavigationLink href="/settings/sections">
-            Section library
-          </NavigationLink>
-          <NavigationLink href="/mailbox">Connected mailbox</NavigationLink>
-          <NavigationLink href="/people/recovery">
-            Account recovery
-          </NavigationLink>
-          <NavigationLink href="/people">People</NavigationLink>
-        </>
-      )}
+      {[
+        { label: "Program", items: program },
+        { label: "Administration", items: administration },
+      ]
+        .filter((group) => group.items.length)
+        .map((group) => (
+          <div className={styles.navigationGroup} key={group.label}>
+            <p className={styles.groupLabel}>{group.label}</p>
+            {group.items.map((item) => (
+              <NavigationLink key={item.href} href={item.href} icon={item.icon}>
+                {item.label}
+              </NavigationLink>
+            ))}
+          </div>
+        ))}
     </nav>
   );
 }
-
-function NavigationLink(props: ComponentProps<typeof Link>) {
+function NavigationLink({
+  icon: Icon,
+  ...props
+}: ComponentProps<typeof Link> & { icon: LucideIcon }) {
   const path = usePathname(),
     target = String(props.href);
   const active =
@@ -186,7 +257,10 @@ function NavigationLink(props: ComponentProps<typeof Link>) {
     <Link
       {...props}
       aria-current={active ? "page" : undefined}
-      className={active ? "bg-sidebar-accent font-semibold" : undefined}
-    />
+      className={`${styles.navigationLink} ${active ? styles.active : ""}`}
+    >
+      <Icon aria-hidden size={18} />
+      <span>{props.children}</span>
+    </Link>
   );
 }
