@@ -494,6 +494,11 @@ test("people and invitation review support contained mobile tables, keyboard foc
   await expect(
     page.getByRole("region", { name: "People table" }),
   ).toBeVisible();
+  await expect(
+    page
+      .getByRole("main")
+      .getByRole("link", { name: "Program email", exact: true }),
+  ).toHaveAttribute("href", "/mailbox");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(

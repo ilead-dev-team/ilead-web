@@ -63,6 +63,14 @@ The institutional paper renderer and author permissions are unchanged. This clos
 
 Validation:16 of18 affected browser cases passed initially. The now-visible preview duplicated editor content, requiring two editor-specific test selectors. The create/edit/confirm/send case then passed; custom-section checks passed after increasing their timeout for the larger accessibility scan. All18 affected cases therefore passed across the run and rechecks, including both-theme accessibility, autosave, unsaved preview, section-library permissions and1440px side-by-side/320–390px stacked geometry. All134 logic tests, type generation/TypeScript, changed-file lint, formatting and whitespace checks passed. Desktop/light and mobile/dark builder screenshots were inspected. These are fixture-backed checks.
 
+## Seventh pass: people and administration surfaces
+
+People role views now use underlined active-state buttons with44px targets and mobile wrapping. The header links to Program email, matching shared delivery. People, invitation and recovery tables share consistent13px comparison typography,18px cell insets, contrast-safe headers and internally scrolling panels. Their existing accessible names, keyboard focus targets, captions, pagination and permission checks remain in place.
+
+Invitation and configuration forms use a maximum820px width,20px field gaps and consistent theme surfaces. Calendar current-year, editor and saved-year panels share the same spacing. Recovery content now has a single spaced page container. No invitation recipient, email send, recovery, calendar validation or mutation behavior changes are introduced.
+
+Validation:37 of38 administration browser cases passed initially; the added Program email link assertion matched both the sidebar and page header. After scoping it to page content, all17 selected recovery/mobile-review checks passed, including that case, idempotency, role denial and both-theme keyboard layouts. All134 logic tests, type generation/TypeScript, changed-file ESLint, formatting and whitespace checks passed. Desktop/light and mobile/dark people and invitation-review screenshots were inspected. Browser checks use API fixtures, not live email or deployed acceptance.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.

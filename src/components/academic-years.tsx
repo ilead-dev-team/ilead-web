@@ -1,4 +1,5 @@
 "use client";
+import styles from "./administration.module.css";
 import {
   useCallback,
   useEffect,
@@ -285,7 +286,7 @@ export function AcademicYears() {
     );
   }
   return (
-    <div className="grid min-w-0 gap-6 [overflow-wrap:anywhere]">
+    <div className={styles.page}>
       <header>
         <h1>Academic years</h1>
         <p className="text-muted-foreground">
@@ -295,7 +296,7 @@ export function AcademicYears() {
       </header>
       <section
         aria-labelledby="current-calendar-title"
-        className="rounded-xl border border-border bg-card p-5"
+        className={styles.panel}
       >
         <h2 id="current-calendar-title" className="font-semibold">
           Current academic year
@@ -354,10 +355,7 @@ export function AcademicYears() {
         </p>
       )}
       {editor && (
-        <section
-          aria-labelledby="calendar-form-title"
-          className="min-w-0 rounded-xl border border-border bg-card p-5"
-        >
+        <section aria-labelledby="calendar-form-title" className={styles.panel}>
           <h2 id="calendar-form-title" className="text-lg font-semibold">
             {editor.original ? "Edit academic year" : "New academic year"}
           </h2>
@@ -532,7 +530,7 @@ export function AcademicYears() {
                   <li key={year.id}>
                     <article
                       aria-label={`Academic year ${year.label}`}
-                      className="min-w-0 rounded-xl border border-border bg-card p-5"
+                      className={styles.panel}
                     >
                       <h2 className="text-lg font-semibold">{year.label}</h2>
                       <p className="text-sm">
