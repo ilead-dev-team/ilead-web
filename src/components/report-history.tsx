@@ -1,4 +1,5 @@
 "use client";
+import styles from "./reports.module.css";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -107,7 +108,7 @@ export function ReportHistory({
   };
   return (
     <section
-      className="my-7 grid gap-4 rounded-xl border border-border p-5"
+      className={`${styles.panel} grid gap-4`}
       aria-labelledby="report-history-heading"
     >
       <h2 id="report-history-heading">Versions and Word downloads</h2>

@@ -1,0 +1,127 @@
+.page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.panel,
+.preview {
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  min-width: 0;
+}
+.panel > h2 {
+  margin-bottom: 12px;
+}
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.tableViewport {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.table thead th {
+  padding: 16px 18px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-weight: 600;
+}
+.table td,
+.table tbody th {
+  padding: 18px;
+  border-top: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  max-width: 300px;
+}
+.table tbody th {
+  font-weight: 500;
+  min-width: 220px;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--muted);
+}
+.supporting {
+  margin-top: 6px;
+  color: var(--muted-foreground);
+}
+.sectionNav {
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.sectionNav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+.sectionNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+.editorSection {
+  scroll-margin-top: 96px;
+}
+.preview summary {
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.saveBar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 4px 16px var(--border);
+}
+.saveBar p {
+  margin-right: auto;
+}
+@media (max-width: 640px) {
+  .panel,
+  .preview,
+  .search,
+  .sectionNav {
+    padding: 16px;
+  }
+  .saveBar {
+    bottom: 8px;
+    padding: 12px;
+  }
+  .saveBar button {
+    flex: 1 1 160px;
+  }
+}

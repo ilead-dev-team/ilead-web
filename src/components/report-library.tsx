@@ -1,4 +1,5 @@
 "use client";
+import styles from "./reports.module.css";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -47,7 +48,7 @@ export function ReportLibrary({
   return (
     <section
       aria-labelledby="report-library-heading"
-      className="my-5 grid gap-4 rounded-xl border border-border p-5"
+      className={`${styles.panel} grid gap-4`}
     >
       <h2 id="report-library-heading">Add from section library</h2>
       <p>

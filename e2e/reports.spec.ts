@@ -442,3 +442,85 @@ test("Facilitators are redirected before report requests", async ({ page }) => {
   }
   expect(requests).toBe(0);
 });
+
+test("report list compares delivery states and contains mobile scrolling in both themes", async ({
+  page,
+}, testInfo) => {
+  await auth(page);
+  await page.route("**/api/v1/notifications/unread-count", (r) =>
+    r.fulfill({ json: { data: { count: 0 } } }),
+  );
+  await page.route("**/api/v1/reports?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [
+          base,
+          {
+            ...base,
+            id: otherId,
+            status: "SENT",
+            sentAt: "2026-10-14T10:00:00.000Z",
+            firstReadAt: "2026-10-14T11:00:00.000Z",
+          },
+        ],
+        meta: { page: 1, pageSize: 20, total: 2, totalPages: 1 },
+      },
+    }),
+  );
+  await page.goto("/reports");
+  const region = page.getByRole("region", { name: "Reports list" });
+  await expect(
+    region.getByRole("columnheader", { name: "Read", exact: true }),
+  ).toBeVisible();
+  await expect(
+    region.getByRole("cell", { name: "Not sent", exact: true }),
+  ).toBeVisible();
+  await expect(
+    region.getByRole("cell", { name: "Read", exact: true }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath("reports-desktop.png"),
+    fullPage: true,
+  });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect(await region.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(
+      true,
+    );
+  }
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath("reports-mobile-dark.png"),
+    fullPage: true,
+  });
+});
+
+test("builder section links target mounted editors and saving remains sticky", async ({
+  page,
+}) => {
+  await auth(page);
+  await page.route(`**/api/v1/reports/${id}`, (r) =>
+    r.fulfill({ json: { data: base } }),
+  );
+  await page.goto(`/reports/${id}`);
+  const nav = page.getByRole("navigation", { name: "Report sections" });
+  await expect(
+    nav.getByRole("link", { name: "Opening summary" }),
+  ).toHaveAttribute("href", `#report-section-${summaryId}`);
+  await nav.getByRole("link", { name: "Session Highlights" }).click();
+  await expect(
+    page.locator(`#report-section-${highlightsId}`),
+  ).toBeInViewport();
+  await expect(
+    page
+      .getByRole("button", { name: "Save report", exact: true })
+      .locator(".."),
+  ).toHaveCSS("position", "sticky");
+});
