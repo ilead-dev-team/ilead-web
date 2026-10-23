@@ -1,4 +1,5 @@
 "use client";
+import styles from "./administration.module.css";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -94,7 +95,7 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
   }, [send.isSuccess, send.isPending]);
   const busy = send.isPending;
   return (
-    <>
+    <div className={styles.page}>
       <h1>Account recovery</h1>
       <p className="text-muted-foreground">
         Send a one-hour reset link to the account’s stored email through the
@@ -116,10 +117,7 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
         active={requestId !== null && (query.isPending || query.isFetching)}
       />
       {query.data?.detail && !query.isError && (
-        <section
-          aria-label="Recovery request details"
-          className="my-5 rounded-lg border border-border p-4"
-        >
+        <section aria-label="Recovery request details" className={styles.panel}>
           <h2 className="text-xl font-semibold">Request details</h2>
           <p className="break-all text-sm">Request {query.data.detail.id}</p>
           <p>
@@ -194,9 +192,9 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
             role="region"
             aria-label="Recovery requests table"
             tabIndex={0}
-            className="mt-7 overflow-x-auto rounded-lg border border-border"
+            className={styles.tableViewport}
           >
-            <table className="w-full min-w-[40rem] text-left text-sm">
+            <table className={styles.table}>
               <caption className="p-3 text-left">
                 Recovery requests · {query.data.meta.total} total
               </caption>
@@ -352,6 +350,6 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
           </Button>
         </div>
       </dialog>
-    </>
+    </div>
   );
 }

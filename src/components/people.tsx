@@ -1,4 +1,5 @@
 "use client";
+import styles from "./administration.module.css";
 import Link from "next/link";
 import {
   useCallback,
@@ -90,11 +91,11 @@ function PeopleList({ view }: { view: Exclude<View, "INVITATIONS"> }) {
     staleTime: 0,
   });
   return (
-    <section className="min-w-0" aria-label={viewLabels[view]}>
+    <section className={styles.section} aria-label={viewLabels[view]}>
       <h2 className="my-4 text-lg font-semibold">{viewLabels[view]}</h2>
       {view !== "UNREGISTERED" ? (
         <form
-          className="my-5 flex flex-wrap items-end gap-3"
+          className={styles.search}
           onSubmit={(e) => {
             e.preventDefault();
             setQ(search.trim());
@@ -139,12 +140,12 @@ function PeopleList({ view }: { view: Exclude<View, "INVITATIONS"> }) {
             </p>
           ) : (
             <div
-              className="mt-4 overflow-x-auto rounded-lg border border-border"
+              className={styles.tableViewport}
               role="region"
               aria-label="People table"
               tabIndex={0}
             >
-              <table className="w-full min-w-[660px] text-left text-sm">
+              <table className={styles.table}>
                 <caption className="p-4 text-left">
                   {viewLabels[view]} · {query.data.meta.total} total
                 </caption>
@@ -395,7 +396,7 @@ function Invitations() {
   };
   const target = review?.kind === "create" ? review.input : review?.row;
   return (
-    <section className="min-w-0" aria-label="Invitations">
+    <section className={styles.section} aria-label="Invitations">
       <div className="my-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Invitations</h2>
         <Button
@@ -441,7 +442,7 @@ function Invitations() {
       )}
       {open && (
         <form
-          className="my-5 grid max-w-xl gap-3 rounded-xl border border-border bg-card p-5"
+          className={`${styles.panel} ${styles.form}`}
           noValidate
           aria-label="Invite user"
           onSubmit={(event) => {
@@ -527,7 +528,7 @@ function Invitations() {
           {notice}
         </p>
       )}
-      <div className="my-5 flex flex-wrap items-end gap-3">
+      <div className={styles.search}>
         <Field id="invitation-status" label="Invitation status">
           <Select
             id="invitation-status"
@@ -570,12 +571,12 @@ function Invitations() {
             <p className="notice">No invitations in this view on this page.</p>
           ) : (
             <div
-              className="overflow-x-auto rounded-lg border border-border"
+              className={styles.tableViewport}
               role="region"
               aria-label="Invitations table"
               tabIndex={0}
             >
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className={styles.table}>
                 <caption className="p-4 text-left">
                   Invitations · {query.data.meta.total} total · Dates in Kigali
                 </caption>
@@ -734,18 +735,18 @@ export function People() {
   const [view, setView] = useState<View>("FACILITATOR");
   if (user.role !== "COORDINATOR") return null;
   return (
-    <div className="grid min-w-0 gap-5 [overflow-wrap:anywhere]">
+    <div className={styles.page}>
       <header>
         <h1>People</h1>
         <p className="text-muted-foreground">
           Inspect program accounts and manage invitation-only access.
         </p>
         <div className="mt-3 flex flex-wrap gap-4">
-          <Link href="/mailbox">Connected mailbox</Link>
+          <Link href="/mailbox">Program email</Link>
           <Link href="/people/recovery">Account recovery</Link>
         </div>
       </header>
-      <nav aria-label="People views" className="flex flex-wrap gap-2">
+      <nav aria-label="People views" className={styles.views}>
         {Object.entries(viewLabels).map(([key, label]) => (
           <Button
             key={key}

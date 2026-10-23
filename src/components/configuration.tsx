@@ -1,4 +1,5 @@
 "use client";
+import styles from "./administration.module.css";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
@@ -122,7 +123,7 @@ function Editor({
   return (
     <form
       aria-label={`Edit ${isActivity ? item.name : item.title}`}
-      className="grid min-w-0 gap-4 rounded-xl border border-border p-4"
+      className={`${styles.panel} grid gap-4`}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -437,7 +438,7 @@ export function Configuration({ mode }: { mode: Mode }) {
     }
   };
   return (
-    <section className="min-w-0">
+    <section className={styles.page}>
       <h1>{mode === "activities" ? "Activity types" : "Section library"}</h1>
       <p className="mb-6 text-muted-foreground">
         {mode === "activities"
@@ -480,7 +481,7 @@ export function Configuration({ mode }: { mode: Mode }) {
       )}
       <form
         aria-label="Add configuration"
-        className="mb-8 grid min-w-0 gap-4 rounded-xl border border-border p-4"
+        className={`${styles.panel} ${styles.form}`}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
