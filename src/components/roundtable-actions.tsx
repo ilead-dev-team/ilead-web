@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import styles from "./roundtables.module.css";
 import { useEffect, useRef, useState } from "react";
 import {
   useIsMutating,
@@ -131,7 +132,7 @@ export function DetailsEditor({
     locked = busy || blocked || uncertain;
   return (
     <form
-      className="mt-6 grid max-w-xl gap-4 rounded-xl border border-border p-5"
+      className={`${styles.panel} grid gap-4`}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();

@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import styles from "./roundtables.module.css";
+import { RoundtableProgress } from "./roundtable-progress";
 import { useCallback, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -67,7 +69,7 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
     },
   });
   return (
-    <section>
+    <section className={styles.page}>
       <h1 ref={heading} tabIndex={-1}>
         {trash ? "Roundtable trash" : "Roundtables"}
       </h1>
@@ -91,7 +93,7 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
         </Link>
       )}
       <form
-        className="my-5 flex flex-wrap items-end gap-3"
+        className={styles.search}
         onSubmit={(event) => {
           event.preventDefault();
           setQ(search.trim());
@@ -110,7 +112,7 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
         </div>
         <Button>Search</Button>
       </form>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={styles.filters}>
         <Field id="rt-status" label="Status">
           <Select
             id="rt-status"
@@ -189,58 +191,115 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
       )}
       {query.data && (
         <>
-          <div className="my-6 grid gap-4 sm:grid-cols-2">
-            {query.data.data.length ? (
-              query.data.data.map((row) => (
-                <article
-                  key={row.id}
-                  className="min-w-0 break-words rounded-xl border border-border p-5"
-                >
-                  <h2>
-                    {trash ? (
-                      row.name
-                    ) : (
-                      <Link
-                        className="underline"
-                        href={`/roundtables/${row.id}`}
-                      >
-                        {row.name}
-                      </Link>
+          {query.data.data.length ? (
+            <div
+              className={styles.tableViewport}
+              role="region"
+              aria-label="Roundtables list"
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <caption className="sr-only">
+                  {trash ? "Trashed roundtables" : "Roundtables"} ·{" "}
+                  {query.data.meta.total} total
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Roundtable</th>
+                    <th scope="col">Class</th>
+                    <th scope="col">Current level</th>
+                    <th scope="col">Facilitator</th>
+                    <th scope="col">Status</th>
+                    {user.role === "COORDINATOR" && (
+                      <th scope="col">Actions</th>
                     )}
-                  </h2>
-                  <p>{row.slogan}</p>
-                  <p>
-                    {levelLabels[row.currentLevel]} ·{" "}
-                    {row.status === "COMPLETED" ? "Completed" : "Active"}
-                  </p>
-                  <p>Facilitator: {row.facilitator?.name ?? "Detached"}</p>
-                  {user.role === "COORDINATOR" && (
-                    <Lifecycle
-                      row={row}
-                      trash={trash}
-                      blocked={
-                        query.isError || query.isFetching || views.isPending
-                      }
-                      focusFallback={focusFallback}
-                      onSaved={async (message) => {
-                        if (message) setNotice(message);
-                        await views.mutateAsync().catch(() => {});
-                      }}
-                      onCheck={async () => {
-                        await query.refetch({ throwOnError: true });
-                        setNotice(
-                          "Roundtables refreshed. Inspect the live and trash views; a missing row alone does not confirm the earlier action.",
-                        );
-                        focusFallback();
-                      }}
-                    />
-                  )}
-                </article>
-              ))
-            ) : (
-              <p>No matching roundtables.</p>
-            )}
-          </div>
+                  </tr>
+                </thead>
+                <tbody>
+                  {query.data.data.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <div className={styles.tableIdentity}>
+                          <RoundtableProgress
+                            level={row.currentLevel}
+                            completed={row.lastLesson?.number ?? 0}
+                          />
+                          <div>
+                            <h2>
+                              {trash ? (
+                                row.name
+                              ) : (
+                                <Link href={`/roundtables/${row.id}`}>
+                                  {row.name}
+                                </Link>
+                              )}
+                            </h2>
+                            <p>
+                              {row.lastLesson
+                                ? `Lesson ${row.lastLesson.number}: ${row.lastLesson.title}`
+                                : "No lesson completed yet"}
+                            </p>
+                            <p>{row.slogan}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {row.classYear === "YEAR_1"
+                          ? "Year 1"
+                          : row.classYear === "YEAR_2"
+                            ? "Year 2"
+                            : "Year 3"}
+                      </td>
+                      <td>
+                        <span className={styles.badge}>
+                          {levelLabels[row.currentLevel]}
+                        </span>
+                      </td>
+                      <td>{row.facilitator?.name ?? "Detached"}</td>
+                      <td>
+                        <span className={styles.badge}>
+                          {row.status === "COMPLETED" ? "Completed" : "Active"}
+                        </span>
+                      </td>
+                      {user.role === "COORDINATOR" && (
+                        <td>
+                          {" "}
+                          {user.role === "COORDINATOR" && (
+                            <Lifecycle
+                              row={row}
+                              trash={trash}
+                              blocked={
+                                query.isError ||
+                                query.isFetching ||
+                                views.isPending
+                              }
+                              focusFallback={focusFallback}
+                              onSaved={async (message) => {
+                                if (message) setNotice(message);
+                                await views.mutateAsync().catch(() => {});
+                              }}
+                              onCheck={async () => {
+                                await query.refetch({ throwOnError: true });
+                                setNotice(
+                                  "Roundtables refreshed. Inspect the live and trash views; a missing row alone does not confirm the earlier action.",
+                                );
+                                focusFallback();
+                              }}
+                            />
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <h2>No matching roundtables.</h2>
+              <p>Try another name, class, level or status.</p>
+            </div>
+          )}
         </>
       )}
       {(query.data || page > 1) && (
@@ -306,7 +365,7 @@ export function RoundtableDetail({
   });
   const row = details.data?.data;
   return (
-    <section>
+    <section className={own ? styles.ownPage : styles.page}>
       <h1>{own ? "My roundtable" : "Roundtable details"}</h1>
       <RoundtableRefresh views={views} />
       <Pending active={details.isFetching} />
@@ -321,90 +380,119 @@ export function RoundtableDetail({
       )}
       {row && (
         <>
-          <div className="my-6 rounded-xl border border-border p-5">
-            <h2>{row.name}</h2>
-            <p>{row.slogan}</p>
-            <p>
-              {levelLabels[row.currentLevel]} ·{" "}
-              {row.status === "COMPLETED" ? "Program completed" : "Active"}
-            </p>
-            <p>
-              Last completed:{" "}
-              {row.lastLesson
-                ? `${row.lastLesson.number}. ${row.lastLesson.title}`
-                : "No lesson completed yet."}
-            </p>
-            <p>
-              Next lesson:{" "}
-              {row.nextLesson
-                ? `${levelLabels[row.nextLesson.level]} ${row.nextLesson.number}. ${row.nextLesson.title}`
-                : "Program complete."}
-            </p>
-            <p>
+          <section
+            className={styles.summary}
+            aria-label="Roundtable progress summary"
+          >
+            <div className={styles.identity}>
+              <RoundtableProgress
+                level={row.currentLevel}
+                completed={row.lastLesson?.number ?? 0}
+                large
+              />
+              <div>
+                <p className={styles.eyebrow}>
+                  {row.classYear === "YEAR_1"
+                    ? "Year 1"
+                    : row.classYear === "YEAR_2"
+                      ? "Year 2"
+                      : "Year 3"}{" "}
+                  / {levelLabels[row.currentLevel]}
+                </p>
+                <h2>{row.name}</h2>
+                <p>{row.slogan}</p>
+                <span className={styles.badge}>
+                  {row.status === "COMPLETED" ? "Program completed" : "Active"}
+                </span>
+              </div>
+            </div>
+            <div className={styles.lessonGrid}>
+              <p className={styles.lessonPanel}>
+                Last completed:{" "}
+                {row.lastLesson
+                  ? `${row.lastLesson.number}. ${row.lastLesson.title}`
+                  : "No lesson completed yet."}
+              </p>
+              <p className={styles.lessonPanel}>
+                Next lesson:{" "}
+                {row.nextLesson
+                  ? `${levelLabels[row.nextLesson.level]} ${row.nextLesson.number}. ${row.nextLesson.title}`
+                  : "Program complete."}
+              </p>
+            </div>
+            <p className={styles.attendanceSummary}>
               Attendance: {row.attendance.met} met · {row.attendance.didNotMeet}{" "}
               did not meet
             </p>
-          </div>
-          <h2>Completed lessons</h2>
-          <Field id="history-level" label="History level">
-            <Select
-              id="history-level"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-            >
-              {Object.entries(levelLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Pending active={progress.isPending} />
-          <Feedback error={progress.error} />
-          {progress.isError && (
-            <Button onClick={() => progress.refetch()}>Retry progress</Button>
-          )}
-          {progress.data && (
-            <ul className="my-4 grid gap-3">
-              {progress.data.data.completed.filter(
-                (item) => item.level === level,
-              ).length ? (
-                progress.data.data.completed
-                  .filter((item) => item.level === level)
-                  .map((item) => (
-                    <li
-                      className="rounded-lg border border-border p-3"
-                      key={item.lessonId}
-                    >
-                      {item.number}. {item.title} ·{" "}
-                      {item.source === "ENROLLMENT_BASELINE"
-                        ? "Before registration"
-                        : (item.completedOn ??
-                          item.sessionDate ??
-                          "Date unavailable")}
+          </section>
+          <div className={styles.historyGrid}>
+            <section className={styles.panel}>
+              <h2>Completed lessons</h2>
+              <Field id="history-level" label="History level">
+                <Select
+                  id="history-level"
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                >
+                  {Object.entries(levelLabels).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Pending active={progress.isPending} />
+              <Feedback error={progress.error} />
+              {progress.isError && (
+                <Button onClick={() => progress.refetch()}>
+                  Retry progress
+                </Button>
+              )}
+              {progress.data && (
+                <ul className="my-4 grid gap-3">
+                  {progress.data.data.completed.filter(
+                    (item) => item.level === level,
+                  ).length ? (
+                    progress.data.data.completed
+                      .filter((item) => item.level === level)
+                      .map((item) => (
+                        <li
+                          className="rounded-lg border border-border p-3"
+                          key={item.lessonId}
+                        >
+                          {item.number}. {item.title} ·{" "}
+                          {item.source === "ENROLLMENT_BASELINE"
+                            ? "Before registration"
+                            : (item.completedOn ??
+                              item.sessionDate ??
+                              "Date unavailable")}
+                        </li>
+                      ))
+                  ) : (
+                    <li>No completed lessons at this level.</li>
+                  )}
+                </ul>
+              )}
+            </section>
+            <section className={styles.panel}>
+              <h2>Attendance history</h2>
+              <ul className="my-4 grid gap-2">
+                {row.attendance.history.length ? (
+                  row.attendance.history.map((item) => (
+                    <li key={item.entryId}>
+                      {item.sessionDate ?? "Date unavailable"} ·{" "}
+                      {item.met ? "Met" : "Did not meet"} ·{" "}
+                      {item.status === "CANCELLED"
+                        ? "Cancelled session"
+                        : "Held session"}
                     </li>
                   ))
-              ) : (
-                <li>No completed lessons at this level.</li>
-              )}
-            </ul>
-          )}
-          <h2>Attendance history</h2>
-          <ul className="my-4 grid gap-2">
-            {row.attendance.history.length ? (
-              row.attendance.history.map((item) => (
-                <li key={item.entryId}>
-                  {item.sessionDate ?? "Date unavailable"} ·{" "}
-                  {item.met ? "Met" : "Did not meet"} ·{" "}
-                  {item.status === "CANCELLED"
-                    ? "Cancelled session"
-                    : "Held session"}
-                </li>
-              ))
-            ) : (
-              <li>No session entries yet.</li>
-            )}
-          </ul>
+                ) : (
+                  <li>No session entries yet.</li>
+                )}
+              </ul>
+            </section>
+          </div>
           {user.role !== "SPONSOR" && (
             <DetailsEditor
               key={row.id}
@@ -416,7 +504,7 @@ export function RoundtableDetail({
             />
           )}
           {own && (
-            <Link className="mt-5 inline-block underline" href="/issues">
+            <Link className={styles.issueLink} href="/issues">
               Raise or follow an issue
             </Link>
           )}

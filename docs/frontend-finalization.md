@@ -27,10 +27,20 @@ Visual inspection caught an existing global anchor color overriding primary butt
 
 Validation: all10 dashboard browser tests and all134 frontend logic tests passed; changed-file lint, formatting and whitespace checks passed. Screenshots were inspected at desktop and390px in both themes. These remain fixture-backed UI checks, not deployed acceptance or physical push verification.
 
+## Third pass: roundtables and linked issues
+
+Staff roundtable browsing now uses a semantic table with current level, Facilitator and status columns. The table scrolls inside its own keyboard-focusable panel on narrow screens. Progress rings show the actual completed lesson count for the current level, including zero and all16 lessons; accessible labels include the level and count. Coordinator lifecycle controls retain their existing authorization checks.
+
+Own/detail screens now group progress, last/next lessons and recorded histories into consistent panels, with the Facilitator view limited to820px. Registration groups identity fields and the curriculum starting point while preserving name-conflict input retention. Linked issue pages use the same spacing and narrow Facilitator layout. Existing requests, permission checks and mutation behavior remain in place.
+
+Validation: all38 affected account, roundtable and issue browser tests and all134 frontend logic tests passed. Type generation, TypeScript, changed-file ESLint/formatting, whitespace checks and the production build passed. New browser coverage checks progress boundaries, Sponsor action visibility,320/390px document overflow and table scrolling, and light/dark accessibility. Desktop/light and mobile/dark list screenshots were inspected. An initial light-theme table-heading contrast failure was corrected before the passing rerun.
+
+These checks use API fixtures. Deployed populated journeys and physical-device push acceptance remain separate work.
+
 ## Ordered remaining passes
 
 1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.
-2. Roundtable registration, own/detail/list views and issue flows.
+2. Roundtable registration, own/detail/list views and issue flows: implemented and locally verified in the third pass; include in deployed regression.
 3. Session lists, creation/cancellation and bulk lesson entry, including retained unsaved edits.
 4. Report library, builder, final/send flow, sent document reading, feedback and version history.
 5. People/invitations, recovery, calendar, curriculum and program settings.
