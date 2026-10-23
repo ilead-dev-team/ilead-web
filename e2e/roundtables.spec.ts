@@ -16,6 +16,85 @@ const user = {
   hasRoundtable: true,
   roundtableId: id,
 };
+
+test("Sponsor list labels zero and level-boundary progress and confines mobile table scrolling", async ({
+  page,
+}, testInfo) => {
+  await page.route("**/api/v1/auth/me", (r) =>
+    r.fulfill({ json: { data: { ...user, role: "SPONSOR" } } }),
+  );
+  await page.route("**/api/v1/notifications/unread-count", (r) =>
+    r.fulfill({ json: { data: { count: 0 } } }),
+  );
+  await page.route("**/api/v1/roundtables?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [
+          {
+            ...row,
+            name: "New Circle",
+            lastLesson: null,
+            nextLesson: { ...row.nextLesson, number: 1 },
+          },
+          {
+            ...row,
+            id: "33333333-3333-4333-8333-333333333333",
+            name: "Transition Circle",
+            lastLesson: { ...row.lastLesson, number: 16 },
+            nextLesson: { ...row.nextLesson, level: "IDO", number: 1 },
+          },
+        ],
+        meta: { ...meta, total: 2 },
+      },
+    }),
+  );
+  await page.goto("/roundtables");
+  await expect(
+    page.getByRole("columnheader", { name: "Current level", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", {
+      name: "iChoose: 0 of 16 lessons completed",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", {
+      name: "iChoose: 16 of 16 lessons completed",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Actions", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath("roundtables-desktop.png"),
+    fullPage: true,
+  });
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+    const viewport = page.getByRole("region", {
+      name: "Roundtables list",
+      exact: true,
+    });
+    await expect(viewport).toHaveAttribute("tabindex", "0");
+    expect(
+      await viewport.evaluate((el) => el.scrollWidth > el.clientWidth),
+    ).toBe(true);
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page
+    .getByRole("button", { name: "Switch to dark mode", exact: true })
+    .click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath("roundtables-mobile-dark.png"),
+    fullPage: true,
+  });
+});
 test("Coordinator filters, confirms trash, and handles restore failures", async ({
   page,
 }) => {
@@ -194,6 +273,7 @@ test("Facilitator sees own histories and edits details without progress fields, 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.getByRole("button", { name: "Switch to dark mode" }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: "artifacts/roundtable-mobile-dark.png",
     fullPage: true,

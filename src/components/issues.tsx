@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import styles from "./roundtables.module.css";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -200,7 +201,9 @@ export function Issues() {
       </>
     );
   return (
-    <section className="space-y-6">
+    <section
+      className={`${styles.issuePage} ${user.role === "FACILITATOR" ? styles.ownPage : ""}`}
+    >
       <header>
         <h1 ref={heading} tabIndex={-1}>
           {user.role === "FACILITATOR" ? "My issues" : "Roundtable issues"}

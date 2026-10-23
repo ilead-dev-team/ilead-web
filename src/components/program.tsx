@@ -1,4 +1,5 @@
 "use client";
+import styles from "./roundtables.module.css";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,7 +61,7 @@ export function RegisterRoundtable() {
     },
   });
   return (
-    <div className="max-w-xl">
+    <div className={styles.registration}>
       <h1>Register your roundtable.</h1>
       <p className="mb-7 text-muted-foreground">
         Choose the starting point from your roundtable’s completed lessons.
@@ -73,75 +74,89 @@ export function RegisterRoundtable() {
         </>
       )}
       {curriculum.data && (
-        <form noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))}>
-          <Field id="name" label="Roundtable name" error={errors.name?.message}>
-            <Input
+        <form
+          className={styles.registrationForm}
+          noValidate
+          onSubmit={handleSubmit((v) => mutation.mutate(v))}
+        >
+          <fieldset>
+            <legend>Roundtable details</legend>
+            <Field
               id="name"
-              aria-invalid={!!errors.name}
-              aria-describedby={errors.name ? "name-error" : undefined}
-              {...register("name", { onChange: () => check.reset() })}
-            />
-          </Field>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={check.isPending}
-            onClick={() => check.mutate(getValues("name"))}
-          >
-            Check name
-          </Button>
-          <Feedback error={check.error} />
-          {check.data && (
-            <p role="status" className="notice">
-              {check.data.data.available
-                ? "This name is available. Availability is checked again when you register."
-                : `Choose a different name. It is too close to ${check.data.data.similarTo}.`}
-            </p>
-          )}
-          <Field id="slogan" label="Slogan" error={errors.slogan?.message}>
-            <Input
-              id="slogan"
-              aria-invalid={!!errors.slogan}
-              aria-describedby={errors.slogan ? "slogan-error" : undefined}
-              {...register("slogan")}
-            />
-          </Field>
-          <Field id="classYear" label="Class">
-            <Select id="classYear" {...register("classYear")}>
-              <option value="YEAR_1">Year 1</option>
-              <option value="YEAR_2">Year 2</option>
-              <option value="YEAR_3">Year 3</option>
-            </Select>
-          </Field>
-          <Field id="level" label="Starting level">
-            <Select id="level" {...register("level")}>
-              {curriculum.data.data.levels.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {l.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field id="lesson" label="Last completed lesson">
-            <Select
-              id="lesson"
-              {...register("lastCompletedLesson", { valueAsNumber: true })}
+              label="Roundtable name"
+              error={errors.name?.message}
             >
-              <option value={0}>No lesson completed at this level</option>
-              {curriculum.data.data.levels
-                .find((l) => l.key === selected)
-                ?.lessons.map((l) => (
-                  <option value={l.number} key={l.id}>
-                    {l.number}. {l.title}
+              <Input
+                id="name"
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? "name-error" : undefined}
+                {...register("name", { onChange: () => check.reset() })}
+              />
+            </Field>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={check.isPending}
+              onClick={() => check.mutate(getValues("name"))}
+            >
+              Check name
+            </Button>
+            <Feedback error={check.error} />
+            {check.data && (
+              <p role="status" className="notice">
+                {check.data.data.available
+                  ? "This name is available. Availability is checked again when you register."
+                  : `Choose a different name. It is too close to ${check.data.data.similarTo}.`}
+              </p>
+            )}
+            <Field id="slogan" label="Slogan" error={errors.slogan?.message}>
+              <Input
+                id="slogan"
+                aria-invalid={!!errors.slogan}
+                aria-describedby={errors.slogan ? "slogan-error" : undefined}
+                {...register("slogan")}
+              />
+            </Field>
+            <Field id="classYear" label="Class">
+              <Select id="classYear" {...register("classYear")}>
+                <option value="YEAR_1">Year 1</option>
+                <option value="YEAR_2">Year 2</option>
+                <option value="YEAR_3">Year 3</option>
+              </Select>
+            </Field>
+          </fieldset>
+          <fieldset>
+            <legend>Starting point</legend>
+            <Field id="level" label="Starting level">
+              <Select id="level" {...register("level")}>
+                {curriculum.data.data.levels.map((l) => (
+                  <option key={l.key} value={l.key}>
+                    {l.label}
                   </option>
                 ))}
-            </Select>
-          </Field>
-          <p className="notice">
-            All earlier levels and lessons through your selection will be
-            recorded as already completed, without session dates. Coordinators
-            record future progress.
-          </p>
+              </Select>
+            </Field>
+            <Field id="lesson" label="Last completed lesson">
+              <Select
+                id="lesson"
+                {...register("lastCompletedLesson", { valueAsNumber: true })}
+              >
+                <option value={0}>No lesson completed at this level</option>
+                {curriculum.data.data.levels
+                  .find((l) => l.key === selected)
+                  ?.lessons.map((l) => (
+                    <option value={l.number} key={l.id}>
+                      {l.number}. {l.title}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
+            <p className="notice">
+              All earlier levels and lessons through your selection will be
+              recorded as already completed, without session dates. Coordinators
+              record future progress.
+            </p>
+          </fieldset>
           <Feedback error={mutation.error} />
           <Pending active={mutation.isPending} />
           <Button disabled={mutation.isPending}>Register roundtable</Button>
