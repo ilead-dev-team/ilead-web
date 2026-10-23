@@ -17,9 +17,19 @@ Reference: platform design system05 and UI_UX/DESIGN_HANDOFF.md. The production 
 
 These browser checks use API fixtures. They verify frontend behavior and accessibility at the tested states, not live-provider delivery or physical-device push.
 
+## Second pass: populated dashboards
+
+The overview now appears before the filter form, following the approved welcome band / four cards / filters / two-column modules hierarchy. Coordinator and Sponsor primary actions lead to their permitted session/report destinations. Supporting card text explains actual counts without fabricated trends. Donut charts now show a visible total while retaining numeric legends.
+
+The filter form uses four desktop columns, two tablet/mobile columns where space permits, and one column below380px. Roundtable selection keeps adequate width. Draft and applied filters, invalid dates, retained selections, download blocking and server authorization are unchanged.
+
+Visual inspection caught an existing global anchor color overriding primary button-link text. Removing that generic color allows the button utility's approved foreground token to apply; ordinary links retain their separate existing rule. A regression check verifies different foreground/background colors on the Create session action. Other new assertions ensure overview cards precede filters and the action points at the actual creation route. Dashboard fixtures now supply unread-count and reminder responses, preventing unrelated absent-backend errors during screenshots.
+
+Validation: all10 dashboard browser tests and all134 frontend logic tests passed; changed-file lint, formatting and whitespace checks passed. Screenshots were inspected at desktop and390px in both themes. These remain fixture-backed UI checks, not deployed acceptance or physical push verification.
+
 ## Ordered remaining passes
 
-1. Populated dashboards and shared page headings, filter density and action placement.
+1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.
 2. Roundtable registration, own/detail/list views and issue flows.
 3. Session lists, creation/cancellation and bulk lesson entry, including retained unsaved edits.
 4. Report library, builder, final/send flow, sent document reading, feedback and version history.

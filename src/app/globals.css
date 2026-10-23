@@ -101,7 +101,6 @@ select {
   -webkit-tap-highlight-color: transparent;
 }
 a {
-  color: var(--primary);
   text-underline-offset: 4px;
 }
 button,

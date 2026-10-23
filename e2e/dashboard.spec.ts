@@ -4,6 +4,17 @@ import { ids, summary, years, roundtable } from "../tests/fixtures/dashboard";
 const mime =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 async function setup(page: Page, role = "COORDINATOR") {
+  await page.route("**/api/v1/notifications/unread-count", (r) =>
+    r.fulfill({ json: { data: { count: 0 } } }),
+  );
+  await page.route("**/api/v1/reminders?**", (r) =>
+    r.fulfill({
+      json: {
+        data: [],
+        meta: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      },
+    }),
+  );
   await page.route("**/api/v1/auth/me", (r) =>
     r.fulfill({
       json: {
@@ -50,6 +61,27 @@ test("Coordinator dashboard renders program charts, counts, operational links an
   await expect(
     page.getByText("Reports awaiting sending", { exact: true }),
   ).toBeVisible();
+  const overview = page.getByRole("region", {
+    name: "Program overview",
+    exact: true,
+  });
+  const filters = page.getByRole("region", {
+    name: "Program filters",
+    exact: true,
+  });
+  expect((await overview.boundingBox())!.y).toBeLessThan(
+    (await filters.boundingBox())!.y,
+  );
+  await expect(
+    page.getByRole("link", { name: "Create session", exact: true }),
+  ).toHaveAttribute("href", "/sessions/new");
+  const actionColors = await page
+    .getByRole("link", { name: "Create session", exact: true })
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { foreground: style.color, background: style.backgroundColor };
+    });
+  expect(actionColors.foreground).not.toBe(actionColors.background);
   await expect(
     page
       .getByRole("region", { name: "Roundtables by level", exact: true })

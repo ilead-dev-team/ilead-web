@@ -1,5 +1,13 @@
 "use client";
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Clock3,
+  FileText,
+  SlidersHorizontal,
+  UsersRound,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
@@ -52,7 +60,12 @@ function Pie({
             aria-hidden="true"
             className={styles.donut}
             style={{ background: chartGradient(rows.map((row) => row.value)) }}
-          />
+          >
+            <span className={styles.donutLabel}>
+              <strong>{total}</strong>
+              <span>Total</span>
+            </span>
+          </div>
           <dl className="grid min-w-0 gap-3">
             {rows.map((row, index) => (
               <div key={row.key} className="flex justify-between gap-4">
@@ -160,6 +173,69 @@ function ExportControls({
     </section>
   );
 }
+function SummaryCards({
+  data,
+  role,
+}: {
+  data: DashboardSummary;
+  role: "COORDINATOR" | "SPONSOR";
+}) {
+  const reportCount =
+    "reportsAwaitingSend" in data.cards
+      ? data.cards.reportsAwaitingSend
+      : data.cards.reportsReceived;
+  const cards = [
+    {
+      label: "Active roundtables",
+      value: data.cards.activeRoundtables,
+      icon: UsersRound,
+      note: "Current active population",
+    },
+    {
+      label: "Sessions held",
+      value: data.cards.sessionsHeld,
+      icon: CalendarDays,
+      note: "In the applied period",
+    },
+    {
+      label: "Stale roundtables",
+      value: data.cards.staleRoundtables,
+      icon: Clock3,
+      note: "May need a follow-up",
+    },
+    role === "COORDINATOR"
+      ? {
+          label: "Reports awaiting sending",
+          value: reportCount,
+          icon: FileText,
+          note: "Draft and confirmed reports",
+        }
+      : {
+          label: "Reports received",
+          value: reportCount,
+          icon: FileText,
+          note: "Published reports only",
+        },
+  ];
+  return (
+    <section aria-label="Program overview">
+      <dl className={styles.cards}>
+        {cards.map(({ label, value, icon: Icon, note }) => (
+          <div className={`${styles.panel} ${styles.summaryCard}`} key={label}>
+            <dt>
+              <span>{label}</span>
+              <Icon aria-hidden size={18} />
+            </dt>
+            <dd>
+              <span>{value}</span>
+              <small>{note}</small>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
 function Results({
   data,
   role,
@@ -167,14 +243,6 @@ function Results({
   data: DashboardSummary;
   role: "COORDINATOR" | "SPONSOR";
 }) {
-  const labels = {
-    activeRoundtables: "Active roundtables",
-    sessionsHeld: "Sessions held",
-    staleRoundtables: "Stale roundtables",
-    ...(role === "COORDINATOR"
-      ? { reportsAwaitingSend: "Reports awaiting sending" }
-      : { reportsReceived: "Reports received" }),
-  };
   const attendance = data.pies.lastSessionAttendance;
   return (
     <>
@@ -183,16 +251,6 @@ function Results({
         completed roundtables are separate. Session and report periods follow
         the applied filters.
       </p>
-      <dl className={styles.cards}>
-        {Object.entries(labels).map(([key, label]) => (
-          <div className={styles.panel} key={key}>
-            <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="mt-3 text-3xl font-semibold">
-              {data.cards[key as keyof typeof data.cards]}
-            </dd>
-          </div>
-        ))}
-      </dl>
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
         <p>Completed roundtables: {data.cards.completedRoundtables}</p>
         <p>Cancelled sessions: {data.cards.sessionsCancelled}</p>
@@ -401,14 +459,48 @@ export function Dashboard() {
   if (!staff) return null;
   return (
     <div className="grid min-w-0 gap-6">
-      <header>
-        <h1>Welcome back, {user.name}.</h1>
-        <p className="text-muted-foreground">
-          A clear view of the program, one session at a time.
-        </p>
+      <header className={styles.hero}>
+        <div>
+          <p className={styles.eyebrow}>Program overview</p>
+          <h1>Welcome back, {user.name}.</h1>
+          <p className={styles.heroDescription}>
+            A clear view of the program, one session at a time.
+          </p>
+        </div>
+        <Button asChild>
+          <Link
+            href={user.role === "COORDINATOR" ? "/sessions/new" : "/reports"}
+          >
+            {user.role === "COORDINATOR"
+              ? "Create session"
+              : "View received reports"}
+            <ArrowUpRight aria-hidden size={18} />
+          </Link>
+        </Button>
       </header>
+      {summary.data && !summary.isError && (
+        <SummaryCards
+          data={summary.data}
+          role={user.role as "COORDINATOR" | "SPONSOR"}
+        />
+      )}
+      {summary.isPending && (
+        <section
+          role="status"
+          aria-label="Loading program overview"
+          className={styles.loadingOverview}
+        >
+          Loading program overview�
+        </section>
+      )}
       <section className={styles.panel} aria-labelledby="dashboard-filters">
-        <h2 id="dashboard-filters">Program filters</h2>
+        <div className={styles.panelHeading}>
+          <h2 id="dashboard-filters">
+            <SlidersHorizontal aria-hidden size={18} />
+            Program filters
+          </h2>
+          <p>Choose a view, then apply it to the dashboard and downloads.</p>
+        </div>
         <Pending active={years.isPending} />
         {years.isError && (
           <>
@@ -509,32 +601,34 @@ export function Dashboard() {
                 aria-invalid={!!invalid}
               />
             </Field>
+            <Field id="dashboard-roundtable" label="Roundtable">
+              <Select
+                id="dashboard-roundtable"
+                value={draft.roundtableId}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedName(
+                    options.data?.data.find((r) => r.id === value)?.name ??
+                      selectedName,
+                  );
+                  change("roundtableId", value);
+                }}
+              >
+                <option value="">All active roundtables</option>
+                {draft.roundtableId &&
+                  !options.data?.data.some(
+                    (r) => r.id === draft.roundtableId,
+                  ) && (
+                    <option value={draft.roundtableId}>{selectedName}</option>
+                  )}
+                {options.data?.data.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
           </div>
-          <Field id="dashboard-roundtable" label="Roundtable">
-            <Select
-              id="dashboard-roundtable"
-              value={draft.roundtableId}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedName(
-                  options.data?.data.find((r) => r.id === value)?.name ??
-                    selectedName,
-                );
-                change("roundtableId", value);
-              }}
-            >
-              <option value="">All active roundtables</option>
-              {draft.roundtableId &&
-                !options.data?.data.some(
-                  (r) => r.id === draft.roundtableId,
-                ) && <option value={draft.roundtableId}>{selectedName}</option>}
-              {options.data?.data.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
           {invalid && (
             <p role="alert" className="mb-4 text-destructive">
               {invalid}
