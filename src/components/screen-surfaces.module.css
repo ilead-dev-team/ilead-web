@@ -1,0 +1,47 @@
+.page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+.panel > p + p {
+  margin-top: 12px;
+}
+.narrow {
+  width: 100%;
+  max-width: 820px;
+}
+.lessonList {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+  min-width: 0;
+}
+.fallback {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 20px;
+  max-width: 820px;
+  min-height: 70dvh;
+  margin: 0 auto;
+}
+.fallback > button:first-child {
+  justify-self: end;
+}
+@media (max-width: 640px) {
+  .panel {
+    padding: 16px;
+  }
+  .fallback {
+    padding: 24px 16px;
+  }
+}

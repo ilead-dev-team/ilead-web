@@ -4,19 +4,27 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "./ui/button";
 function subscribe(callback: () => void) {
   const sync = () => {
+    let preference: string | null = null;
     try {
-      document.documentElement.classList.toggle(
-        "dark",
-        localStorage.getItem("ilead-theme") === "dark",
-      );
+      preference = localStorage.getItem("ilead-theme");
     } catch {}
+    const dark =
+      preference === "dark" ||
+      (preference !== "light" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
     callback();
   };
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+  systemTheme.addEventListener("change", sync);
+  sync();
   window.addEventListener("ilead-theme", callback);
   window.addEventListener("storage", sync);
   return () => {
     window.removeEventListener("ilead-theme", callback);
     window.removeEventListener("storage", sync);
+    systemTheme.removeEventListener("change", sync);
   };
 }
 export function ThemeToggle() {

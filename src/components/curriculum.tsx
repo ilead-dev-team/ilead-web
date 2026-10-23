@@ -1,4 +1,5 @@
 "use client";
+import styles from "./screen-surfaces.module.css";
 import { useEffect, useRef, useState } from "react";
 import {
   useQuery,
@@ -112,7 +113,7 @@ function LessonEditor({
   return (
     <form
       aria-label={`Edit ${levelLabel} lesson ${item.number}`}
-      className="rounded-xl border border-border p-4"
+      className={styles.panel}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -224,7 +225,7 @@ export function Curriculum() {
   const blocked =
     query.isError || query.isFetching || writes > 0 || views.isPending;
   return (
-    <section>
+    <section className={styles.page}>
       <h1>Curriculum</h1>
       <p className="mb-6 text-muted-foreground">
         Edit lesson titles used throughout iLead. Levels and lesson numbers are
@@ -277,7 +278,7 @@ export function Curriculum() {
             <div key={level.key} hidden={selected !== level.key}>
               <section
                 aria-label={`${level.label} lessons`}
-                className="mt-6 grid gap-4"
+                className={styles.lessonList}
               >
                 {level.lessons.map((item) => (
                   <LessonEditor

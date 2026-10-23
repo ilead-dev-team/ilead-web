@@ -1,4 +1,5 @@
 "use client";
+import styles from "./screen-surfaces.module.css";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { Bell } from "lucide-react";
@@ -193,10 +194,7 @@ function NotificationCard({
   const target = notificationTarget(row.link, user),
     kind = reminderKind(row.type);
   return (
-    <article
-      aria-label={row.title}
-      className="min-w-0 rounded-lg border border-border bg-card p-4 [overflow-wrap:anywhere]"
-    >
+    <article aria-label={row.title} className={styles.panel}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-semibold">{row.title}</h3>
         <span className="rounded border border-border px-2 py-1 text-xs">
@@ -288,7 +286,7 @@ export function Reminders() {
     <section
       id="reminders"
       aria-labelledby="reminders-title"
-      className="min-w-0 rounded-xl border border-border bg-card p-5 [overflow-wrap:anywhere]"
+      className={styles.panel}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="reminders-title" className="text-lg font-semibold">
@@ -420,7 +418,7 @@ export function NotificationInbox() {
       ),
   });
   return (
-    <div className="grid min-w-0 gap-6 [overflow-wrap:anywhere]">
+    <div className={styles.page}>
       <header>
         <h1>Notifications</h1>
         <p className="text-muted-foreground">

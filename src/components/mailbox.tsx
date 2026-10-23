@@ -1,4 +1,5 @@
 "use client";
+import styles from "./screen-surfaces.module.css";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -86,7 +87,7 @@ export function Mailbox() {
     }
   }
   return (
-    <div className="max-w-xl">
+    <div className={`${styles.page} ${styles.narrow}`}>
       <h1>
         {query.data?.scope === "PROGRAM"
           ? "Program email"
@@ -122,7 +123,7 @@ export function Mailbox() {
         </p>
       )}
       {query.data?.scope === "PROGRAM" && !query.isError && (
-        <section aria-label="Program email status" className="notice">
+        <section aria-label="Program email status" className={styles.panel}>
           <p className="break-words">
             {query.data.connected
               ? `Sending configured: ${query.data.address}`

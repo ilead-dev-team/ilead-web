@@ -3,6 +3,7 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: [
     "account.spec.ts",
+    "theme.spec.ts",
     "account-shell.spec.ts",
     "account-delivery.spec.ts",
     "dashboard.spec.ts",
