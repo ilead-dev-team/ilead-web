@@ -29,6 +29,26 @@ The completed run passed40 request checks:13 Coordinator,17 Sponsor and10 Facili
 ## Follow-ups
 
 - Word exports through the deployed frontend proxy took roughly57–89 seconds in the earlier measured runs; Excel and ordinary reads were much faster. The existing local Word-export regression passed in904ms after local loopback permission was granted. A subsequent direct API profile completed in6.4 seconds (headers4.9 seconds), and a repeat proxy profile completed in4.2 seconds (headers3.5 seconds), both without content encoding. The slowdown is intermittent; these measurements do not establish a persistent proxy/compression defect. Preserve the timing evidence and repeat under cold-start/load conditions before claiming consistent launch-ready export performance. No speculative caching/compression change was made.
-- Finish deployed create/edit/save/cancel/rework journeys through the UI; this pass read the previously populated staging records.
+- The Coordinator session create/edit/cancel and author report rework journeys passed in the follow-up below. Broader Facilitator correction and Sponsor change-request journeys remain separate acceptance work.
 - Confirm browser download handoff and visual Word pagination with a functioning capture/download connection.
 - Complete physical-device push acceptance after frontend acceptance, as agreed.
+
+## Live mutation follow-up — 24 October 2026
+
+The existing synthetic Coordinator account completed these actions through the deployed browser UI against the real staging API and database:
+
+| Journey            | Observed result                                                                                                                                                                                                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create session     | Created the 2026-10-28 session with a staging-only note and WeLead activity; the detail page showed Held, the configured year/term and one pending roundtable.                                                                                                                                |
+| Edit and save      | Changed the note and added WeOut; the detail summary reflected both activities and the saved note, with “Session saved.”                                                                                                                                                                      |
+| Cancel             | Entered a clearly marked test cancellation reason and confirmed. The returned page showed Cancelled, zero pending entries, retained notes/activities/reason, no entry editor and “Cancelled sessions cannot have reports.” The record was retained; no entries or report were created for it. |
+| Rework sent report | Reopened the existing QA report from Sent v2 to Draft, changed the opening summary, explicitly saved, confirmed Final and sent it again. The returned page showed Sent v3, the revised summary and “Report sent to Sponsors.”                                                                 |
+| Preserve history   | Opened sent version 2 after publishing version 3. Its original summary remained visible, while the current report displayed the new summary. The version list retained versions 1, 2 and 3.                                                                                                   |
+
+After signing in as the synthetic Sponsor, the same report opened as Sent version 3 with the revised summary and no author editing controls. Its first-read date updated to 2026-10-24. Both role sessions were signed out after testing.
+
+DOM records and screenshots are saved under ignored `artifacts/deployed-browser/`, including the cancelled session, author sent version 3 and Sponsor received version 3. This is live mutation evidence, not a new fixture-test count. No application code was changed during this pass.
+
+The automation's generic date fill updated the native value without updating the controlled form state. The accessible date setter successfully submitted the same date. This was an input-method limitation; it did not establish an application defect.
+
+Browser Word download waiting again timed out and detached the automation connection; the page was recovered in a fresh tab of the same browser. HTTP export integrity from the earlier pass still stands, but browser handoff is not certified. The packaged Word renderer also failed because the bundled runtime contains no LibreOffice `soffice.exe`; no page images were generated, so Word pagination remains unverified. Docker and the user's desktop office software were not used.
