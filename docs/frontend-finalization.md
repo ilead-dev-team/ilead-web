@@ -81,13 +81,12 @@ Validation: all87 existing affected browser cases passed, followed by all3 new t
 
 ## Ordered remaining passes
 
-1. Deployed dashboard acceptance alongside the remaining role journeys; continue shared page-heading consistency on subsequent screens.
-2. Roundtable registration, own/detail/list views and issue flows: implemented and locally verified in the third pass; include in deployed regression.
-3. Session lists, creation/cancellation and bulk lesson entry: fourth-pass layouts locally verified; include in deployed regression.
-4. Report library, builder, final/send flow, sent document reading, feedback and version history.
-5. People/invitations, recovery, calendar, curriculum and program settings.
-6. Notifications and shared email status, then public account/error/expired-link states.
-7. Full responsive/light-dark/keyboard/error-state regression, deployed three-role browser journeys and visual export inspection.
-8. Physical-device push acceptance after frontend completion, as requested by the owner.
+The merged main regression passed238 browser cases and134 logic tests. Live populated read journeys and40 three-role API checks are recorded separately in [deployed acceptance](deployed-acceptance.md); they do not replace mutation or physical-device qualification.
+
+1. Complete deployed create/edit/save/cancel/rework journeys through the UI, alongside the earlier API mutation evidence.
+2. Finish manual responsive/light-dark/keyboard/error-state review across populated deployed screens.
+3. Confirm browser download handoff and visually inspect Word pagination; automation capture/download failed during this pass.
+4. Repeat export timing under cold-start/load conditions; initial slow results improved on subsequent profiles, with no established root cause yet.
+5. Physical-device push acceptance after frontend completion, as requested by the owner.
 
 This first pass is a shared-shell improvement, not a claim that every page is finalized or flawless. Do not count fixture tests as deployed end-to-end qualification.
