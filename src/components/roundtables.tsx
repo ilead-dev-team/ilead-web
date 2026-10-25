@@ -222,7 +222,7 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                         <div className={styles.tableIdentity}>
                           <RoundtableProgress
                             level={row.currentLevel}
-                            completed={row.lastLesson?.number ?? 0}
+                            latestLesson={row.lastLesson?.number ?? 0}
                           />
                           <div>
                             <h2>
@@ -387,7 +387,7 @@ export function RoundtableDetail({
             <div className={styles.identity}>
               <RoundtableProgress
                 level={row.currentLevel}
-                completed={row.lastLesson?.number ?? 0}
+                latestLesson={row.lastLesson?.number ?? 0}
                 large
               />
               <div>

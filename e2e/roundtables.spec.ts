@@ -43,8 +43,15 @@ test("Sponsor list labels zero and level-boundary progress and confines mobile t
             lastLesson: { ...row.lastLesson, number: 16 },
             nextLesson: { ...row.nextLesson, level: "IDO", number: 1 },
           },
+          {
+            ...row,
+            id: "44444444-4444-4444-8444-444444444444",
+            name: "Skipped Lesson Circle",
+            lastLesson: { ...row.lastLesson, number: 2, title: "Growth" },
+            nextLesson: { ...row.nextLesson, number: 3 },
+          },
         ],
-        meta: { ...meta, total: 2 },
+        meta: { ...meta, total: 3 },
       },
     }),
   );
@@ -54,16 +61,26 @@ test("Sponsor list labels zero and level-boundary progress and confines mobile t
   ).toBeVisible();
   await expect(
     page.getByRole("img", {
-      name: "iChoose: 0 of 16 lessons completed",
+      name: "iChoose: latest completed lesson 0 of 16",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
     page.getByRole("img", {
-      name: "iChoose: 16 of 16 lessons completed",
+      name: "iChoose: latest completed lesson 16 of 16",
       exact: true,
     }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("img", {
+      name: "iChoose: latest completed lesson 2 of 16",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Latest lesson", { exact: true })).toHaveCount(3);
+  await expect(
+    page.getByRole("img", { name: /lessons completed/ }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("columnheader", { name: "Actions", exact: true }),
   ).toHaveCount(0);
