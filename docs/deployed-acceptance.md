@@ -76,3 +76,23 @@ Loaded dashboard, roundtable list, session list, report list, sent report, Peopl
 Live mobile navigation also passed Shift+Tab wrapping to the last navigation link, Tab wrapping to Close menu, and Escape dismissal returning focus to Menu. Separate fixture-backed regressions passed 44 cases across account shell, lesson entry, report autosave and roundtable pages, including failed-save retention, malformed/uncertain acknowledgements, read-only reconciliation, focus containment, narrow layouts and accessibility. All 134 logic tests passed, as did changed-file lint/formatting, whitespace checks and the production build with TypeScript. The initial local browser attempt reached an unrelated server on port 3000 and was stopped; the passing run used an isolated port/build directory.
 
 Internet connectivity was briefly lost while opening activity settings; Chrome displayed ERR_INTERNET_DISCONNECTED. Connectivity recovered and the remaining settings/account review continued successfully. This browser/network failure is not evidence of the app's failed-save recovery. No forced live write failure was injected. Local fixture failures remain distinct from live observations. Evidence is stored under ignored `artifacts/deployed-browser/` and `test-results/`; Docker was not used.
+
+## Merged label and export transfer follow-up — 25 October 2026
+
+PR 45 merged as `b97f829`; its required verify check passed. The deployed roundtable list now exposes “iChoose: latest completed lesson 1 of 16”, confirming that the label change reached the live app.
+
+New Word export measurements, using only the existing synthetic Coordinator and report:
+
+| Target                       | Headers | Complete body | Bytes     |
+| ---------------------------- | ------- | ------------- | --------- |
+| Frontend proxy, first sample | 4.186s  | 76.983s       | 1,198,585 |
+| Direct staging API           | 2.794s  | 4.227s        | 1,198,582 |
+| Frontend proxy, repeat       | 2.802s  | 5.828s        | 1,198,582 |
+
+The first sample spent most of its time receiving the body after successful headers. This does not prove a single provider, proxy or compression defect, and no controlled cold-start/load qualification is claimed. The actual deployed UI export reproduced “Something went wrong. Try again.” Its API client had a 60-second deadline, shorter than the observed successful HTTP transfer, and body-read failures escaped its network-error conversion.
+
+The fix gives blob downloads a bounded 120-second deadline while retaining 60 seconds for ordinary API requests. Caller cancellation remains active. Body-read errors now become an actionable interrupted-transfer error; requests are not automatically replayed. The Word panel explains the possible two-minute wait and keeps duplicate export actions disabled. Tests cover the separate deadlines, failure after successful headers, caller cancellation, pending-state copy and explicit retry/download handoff.
+
+The repeat export was saved under ignored `artifacts/export-timing-oct25/`. ZIP integrity, document XML, one progress table, all four embedded font files, expected version-4 summary/roundtable text and private-discussion exclusion passed. These are package/content checks, not rendered pagination. Browser download-manager inspection was blocked by the browser URL policy; no workaround was used. The installed WordCraft launch exposed no targetable window. Visual pagination and a live successful browser handoff after deployment remain open; the application fix does not certify either result.
+
+Validation of the transfer fix: all 137 logic tests and all six report-history browser cases passed, including interrupted-download retry and current/versioned file handoff. Changed-file ESLint, formatting, whitespace checks and the production build with TypeScript passed. Browser cases use fixtures; no 77-second live transfer was run through the changed frontend before deployment. No backend code or infrastructure configuration was changed.

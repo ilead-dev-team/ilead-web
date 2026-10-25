@@ -19,6 +19,14 @@ export function createApiClient(
   transport: typeof fetch = (...args) => fetch(...args),
 ) {
   let refreshing: Promise<void> | undefined;
+  const networkError = (options: Options) =>
+    new ApiError(
+      0,
+      "NETWORK_ERROR",
+      options.responseType === "blob"
+        ? "The file transfer was interrupted. Try downloading again."
+        : "Could not reach iLead. Check your connection and try again. Your entries are still here.",
+    );
   async function raw(path: string, options: Options = {}) {
     const {
       body,
@@ -30,14 +38,17 @@ export function createApiClient(
     void _responseType;
     void _public;
     void _onResponse;
+    const timeout = AbortSignal.timeout(
+      options.responseType === "blob" ? 120000 : 60000,
+    );
     return transport(`/api/v1${path}`, {
       ...init,
       credentials: "include",
       cache: "no-store",
       redirect: "error",
       signal: options.signal
-        ? AbortSignal.any([options.signal, AbortSignal.timeout(60000)])
-        : AbortSignal.timeout(60000),
+        ? AbortSignal.any([options.signal, timeout])
+        : timeout,
       headers: {
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         ...options.headers,
@@ -91,11 +102,7 @@ export function createApiClient(
       }
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError(
-        0,
-        "NETWORK_ERROR",
-        "Could not reach iLead. Check your connection and try again. Your entries are still here.",
-      );
+      throw networkError(options);
     }
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
@@ -108,11 +115,16 @@ export function createApiClient(
       );
     }
     options.onResponse?.(response);
-    return response.status === 204
-      ? (undefined as T)
-      : options.responseType === "blob"
-        ? ((await response.blob()) as T)
-        : ((await response.json()) as T);
+    try {
+      return response.status === 204
+        ? (undefined as T)
+        : options.responseType === "blob"
+          ? ((await response.blob()) as T)
+          : ((await response.json()) as T);
+    } catch {
+      // Fetch resolves at headers; a timeout or disconnect can still interrupt the body.
+      throw networkError(options);
+    }
   };
 }
 export const api = createApiClient();

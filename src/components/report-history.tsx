@@ -129,7 +129,12 @@ export function ReportHistory({
         <p>Wait for report changes to save before exporting current content.</p>
       )}
       <Feedback error={download.error} />
-      <Pending active={download.isPending} />
+      {download.isPending && (
+        <p role="status">
+          Preparing your Word file. Keep this page open; slow transfers can take
+          up to two minutes.
+        </p>
+      )}
       {notice && <p role="status">{notice}</p>}
       {!open ? (
         <Button variant="outline" onClick={() => setOpen(true)}>
