@@ -123,3 +123,27 @@ Cleanup passed through the deployed UI and independent authenticated staging API
 | Fresh Coordinator login | UI still showed Not enabled and no registered devices; server returned zero bindings. No silent resubscription occurred. |
 
 The test finished with the synthetic account signed out and its device registration removed. Chrome's site permission may remain granted; this is distinct from an active push subscription. The test comment and notification remain as QA history. Secret-free DOM/screenshots and state metadata are retained in ignored artifacts. Delivery and click-through are user-confirmed; registration/cleanup are automation-observed. This qualifies Windows Chrome only, not Android or iOS, and does not establish a specific push-provider response code. No runtime code changed and no additional full regression suite was run. Multi-page document visual acceptance and controlled cold-start/load qualification remain open.
+
+## Clear account labels and five-page report qualification — 25 October 2026
+
+PR 47 is merged at main commit `8b53c2d`. The later Windows push evidence is carried forward in this branch rather than rewriting the already merged PR.
+
+The frontend source audit found a raw recovery-request UUID, internal delivery error codes, uppercase recovery states and raw section-kind enums in visible copy. Recovery details now identify the account by name and request time, with actionable delivery guidance. Recovery states and section kinds have readable labels; the section library and report builder share the same kind mapping. Internal keys, route parameters and authorization comparisons remain unchanged. Meaningful dates, lesson numbers, counts and report versions remain visible. This audit covers application-generated presentation; it does not rewrite user-authored names or synthetic QA history.
+
+With the owner's explicit override, the existing installed LibreOffice rendered the local 45-row synthetic DOCX using the packaged renderer and a temporary profile. Five page images were inspected individually. Rows 1–7, 8–19, 20–31, 32–43 and 44–45 flowed across pages, with repeated column headings, readable wrapped lesson names, no clipped or split rows and the final checkpoint following the table. No original document or database record was edited. Evidence is under ignored `artifacts/pagination-render/`. This establishes the tested LibreOffice layout, not Microsoft Word compatibility.
+
+A controlled staging export workload ran three sequential downloads, followed by two concurrent downloads of the existing QA report through the deployed frontend:
+
+| Sample       | Headers      | Completed body | Outcome                              |
+| ------------ | ------------ | -------------- | ------------------------------------ |
+| Sequential 1 | 3.052s       | 95.131s        | HTTP 200, valid ZIP signature        |
+| Sequential 2 | 4.755s       | 87.035s        | HTTP 200, valid ZIP signature        |
+| Sequential 3 | 3.770s       | 96.435s        | HTTP 200, valid ZIP signature        |
+| Concurrent 1 | 5.508s       | 92.257s        | HTTP 200, valid ZIP signature        |
+| Concurrent 2 | Not recorded | 120s deadline  | Timeout; workload did not fully pass |
+
+A subsequent direct Render export returned headers in 2.519s and completed in 8.048s. These observations isolate a slower tested frontend transfer path, but do not prove the responsible provider or network component. No confirmed sleeping service was exercised, so provider cold-start acceptance remains open. Raw metadata is retained under ignored artifacts. The deadline is not being extended again to mask the failed concurrency result.
+
+The compression-disabled frontend export also completed slowly: 3.004s to headers and 116.737s to the full body (HTTP 200). Removing compression did not resolve the observed delay. Further provider/network investigation remains required; no export transport redesign or claim of consistent performance is included in this change.
+
+Validation of the presentation change: all 137 logic tests passed. Of 59 affected browser cases, 57 passed initially; the two narrow-theme cases had obsolete assertions requiring raw error codes. After updating those assertions, both passed, followed by three final failure/narrow-theme rechecks after the readable delivery label change. Changed-file ESLint, formatting, whitespace and TypeScript checks passed. The supported webpack production build passed; two local default Turbopack attempts failed while starting their CSS worker. Ignored QA artifacts are now excluded from TypeScript to prevent moved temporary build validators from entering application compilation. Hosted default-builder verification is still required. Light/dark 320px screenshots were inspected; no real email or account recovery action was sent by these fixture-backed tests.

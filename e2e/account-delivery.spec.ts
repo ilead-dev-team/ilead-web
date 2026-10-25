@@ -149,6 +149,12 @@ test("recovery notification opens exact request and refreshes after reviewed sen
     page.getByRole("heading", { name: "Request details" }),
   ).toBeVisible();
   await expect(page.getByText("No delivery attempts.")).toBeVisible();
+  const details = page.getByRole("region", {
+    name: "Recovery request details",
+  });
+  await expect(details).toContainText("Password recovery for Invitee");
+  await expect(details).toContainText("Requested");
+  await expect(details).not.toContainText(recovery.id);
   await page
     .getByRole("button", { name: "Send reset email to Invitee" })
     .click();
@@ -196,6 +202,32 @@ test("recovery missing target offers queue escape and explicit retry", async ({
   await expect(
     page.getByRole("heading", { name: "Request details" }),
   ).not.toBeVisible();
+});
+
+test("recovery delivery failure uses readable guidance instead of internal codes", async ({
+  page,
+}) => {
+  const { state } = await setup(page);
+  state.rows[0]!.deliveries = [
+    {
+      ...delivery,
+      status: "FAILED",
+      lastErrorCode: "MAIL_CREDENTIALS_INVALID",
+    },
+  ];
+  await page.goto(`/people/recovery?request=${recovery.id}`);
+  const details = page.getByRole("region", {
+    name: "Recovery request details",
+  });
+  await expect(details).toContainText("Delivery needs attention.");
+  await expect(details).not.toContainText("MAIL_CREDENTIALS_INVALID");
+  await expect(details).not.toContainText(recovery.id);
+  await expect(
+    page.getByRole("cell", { name: "Needs attention", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Awaiting a reset link", exact: true }),
+  ).toBeVisible();
 });
 
 test("recovery detail blocks sending while account email is unavailable", async ({
@@ -904,7 +936,9 @@ for (const theme of ["light", "dark"])
       name: "Recovery request details",
     });
     await expect(details.getByRole("listitem")).toHaveCount(2);
-    await expect(details).toContainText("PROVIDER_UNAVAILABLE");
+    await expect(details).toContainText("Delivery needs attention.");
+    await expect(details).not.toContainText("PROVIDER_UNAVAILABLE");
+    await expect(details).not.toContainText(recovery.id);
     await expect(details).toContainText("Provider accepted");
     await expect(
       page.getByRole("button", { name: "Send reset email to Invitee" }),
