@@ -108,3 +108,18 @@ The saved file passed ZIP integrity and document-XML checks, contained the expec
 Launching WordCraft through its verified executable path succeeded. The actual downloaded file was opened from its Recent list and inspected at 100% zoom. The shield, Carlito typography, institutional heading, summary, four-column progress table and final notes were readable without clipping or overlap; the status bar showed Page 1 of 1. The lower page area was inspected as well. The downloaded file hash remained unchanged after inspection; no editor changes were saved. This is WordCraft visual acceptance of the one-page staging sample, not Microsoft Word compatibility certification or a canonical LibreOffice render.
 
 A separate 45-row synthetic DOCX was generated locally through the backend's existing renderer, without writing any program records. Its attempted visual inspection was not completed because the viewer's file-dialog input was unreliable. Multi-page/wrapped-row acceptance therefore remains open, as do controlled cold-start/load performance qualification and physical-device push delivery. The device permission question was presented separately; no notification permission was granted or test push sent during this pass. No runtime code was changed, and no new full regression run is claimed.
+
+## Physical Windows push acceptance — 25 October 2026
+
+The user approved Chrome notification permission on this Windows PC and confirmed that the real alert arrived and clicking it opened the QA report. One marked Sponsor discussion comment on the existing synthetic Coordinator report created the notification and queued push; scheduler run 40217193779 completed successfully and acknowledged the tick with HTTP 200. The visible alert used the privacy-safe title “iLead update” and body “Open iLead to view your update.” No report version or change request was created by this comment.
+
+Cleanup passed through the deployed UI and independent authenticated staging API reads:
+
+| Step                    | Observed result                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Disable this device     | UI showed Not enabled and no registered devices; server returned zero bindings.                                          |
+| Explicitly enable again | UI showed Enabled and the named staging Windows device; server returned one binding.                                     |
+| Log out while enabled   | Browser returned to login; server returned zero bindings.                                                                |
+| Fresh Coordinator login | UI still showed Not enabled and no registered devices; server returned zero bindings. No silent resubscription occurred. |
+
+The test finished with the synthetic account signed out and its device registration removed. Chrome's site permission may remain granted; this is distinct from an active push subscription. The test comment and notification remain as QA history. Secret-free DOM/screenshots and state metadata are retained in ignored artifacts. Delivery and click-through are user-confirmed; registration/cleanup are automation-observed. This qualifies Windows Chrome only, not Android or iOS, and does not establish a specific push-provider response code. No runtime code changed and no additional full regression suite was run. Multi-page document visual acceptance and controlled cold-start/load qualification remain open.
