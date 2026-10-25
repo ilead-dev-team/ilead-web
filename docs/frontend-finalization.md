@@ -85,10 +85,10 @@ The merged main regression passed238 browser cases and134 logic tests. Live popu
 
 Completed live journeys now include session create/edit/save/cancel, report reopen/save/confirm/resend, Facilitator detail changes and issue handling, and Sponsor change-request correction/resolution. See the dated acceptance record for exact coverage; this does not establish every workflow or failure path.
 
-1. Live attendance and lesson correction, non-next confirmation and restoration passed; see the dated acceptance record. Merge/deploy the latest-lesson label fix and verify it on the deployed app.
+1. Live attendance and lesson correction, non-next confirmation and restoration passed. The latest-lesson label fix merged and was verified on the deployed app; see the dated acceptance record.
 2. Responsive review passed 114 loaded viewport/theme combinations across 19 core, administration and account/error surfaces, plus live mobile drawer keyboard checks. Failure-recovery checks passed separately in 44 fixture-backed browser cases. This review pass is complete; final merged-code regression and deployment verification remain required before release.
 3. Confirm browser download handoff and visually inspect Word pagination; automation capture/download failed during this pass.
-4. Repeat export timing under cold-start/load conditions; initial slow results improved on subsequent profiles, with no established root cause yet.
+4. New transfer measurements reproduced a 77-second file transfer and the frontend's 60-second timeout failure. Merge/deploy the bounded file-transfer timeout/recovery fix, then verify the live browser handoff. Repeat controlled cold-start/load qualification before claiming consistent export performance; the infrastructure cause remains unproven.
 5. Physical-device push acceptance after frontend completion, as requested by the owner.
 
 This first pass is a shared-shell improvement, not a claim that every page is finalized or flawless. Do not count fixture tests as deployed end-to-end qualification.

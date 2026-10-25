@@ -206,6 +206,52 @@ test("version list retries and pages, and selected snapshots reject drafts and m
   ).toHaveCount(0);
   expect(requests).toEqual(["1", "1", "2"]);
 });
+test("pending Word transfers explain the wait, block duplicates and offer an explicit retry after interruption", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let attempts = 0;
+  const path = `**/api/v1/reports/${id}/export/docx`;
+  await page.route(path, async (route) => {
+    attempts++;
+    await gate;
+    await route.abort("failed");
+  });
+  await open(page);
+  const button = page.getByRole("button", {
+    name: "Export current report .docx",
+    exact: true,
+  });
+  await button.click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Preparing your Word file" }),
+  ).toContainText("two minutes");
+  await expect(button).toBeDisabled();
+  release();
+  await expect(page.locator("main").getByRole("alert")).toContainText(
+    "The file transfer was interrupted. Try downloading again.",
+  );
+  await expect(button).toBeEnabled();
+  expect(attempts).toBe(1);
+  await page.unroute(path);
+  await page.route(path, (route) =>
+    route.fulfill({ contentType: mime, body: file }),
+  );
+  const download = page.waitForEvent("download");
+  await button.click();
+  expect((await download).suggestedFilename()).toBe(
+    "RCA_iLead_Session_Report_2026-10-14.docx",
+  );
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Word file handed to your browser" }),
+  ).toBeVisible();
+});
+
 test("current and selected-version downloads handle server/mime failures then hand exact Word files to browser", async ({
   page,
 }) => {
