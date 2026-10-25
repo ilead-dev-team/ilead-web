@@ -85,8 +85,8 @@ The merged main regression passed238 browser cases and134 logic tests. Live popu
 
 Completed live journeys now include session create/edit/save/cancel, report reopen/save/confirm/resend, Facilitator detail changes and issue handling, and Sponsor change-request correction/resolution. See the dated acceptance record for exact coverage; this does not establish every workflow or failure path.
 
-1. Verify deployed lesson-entry correction and saved history through the UI; the prior lesson-progress mutation evidence is API-based.
-2. Finish manual responsive/light-dark/keyboard/error-state review across populated deployed screens.
+1. Live attendance and lesson correction, non-next confirmation and restoration passed; see the dated acceptance record. Merge/deploy the latest-lesson label fix and verify it on the deployed app.
+2. Responsive review passed 114 loaded viewport/theme combinations across 19 core, administration and account/error surfaces, plus live mobile drawer keyboard checks. Failure-recovery checks passed separately in 44 fixture-backed browser cases. This review pass is complete; final merged-code regression and deployment verification remain required before release.
 3. Confirm browser download handoff and visually inspect Word pagination; automation capture/download failed during this pass.
 4. Repeat export timing under cold-start/load conditions; initial slow results improved on subsequent profiles, with no established root cause yet.
 5. Physical-device push acceptance after frontend completion, as requested by the owner.
