@@ -1,27 +1,31 @@
 # Word download performance investigation
 
-## Measurements — 25 October 2026
+## Findings — 25 October 2026
 
-The same synthetic staging report was downloaded using the existing authenticated endpoints. No real program records or emails were modified.
+The 1.2 MB synthetic staging report took 76.619s through Vercel using Node and 73.162s using curl HTTP/1.1; a direct Render request took 7.321s. Headers arrived in 3.616/8.196/2.540s respectively. The Vercel response continued transferring slowly after headers, rather than spending the whole time generating the report. Five local renders of the larger 45-row document took 189–293ms. A public font was also slow through Vercel. Disabling compression did not fix it.
 
-| Path/client                    | Headers | Full response | Bytes     |
-| ------------------------------ | ------- | ------------- | --------- |
-| Vercel rewrite / Node          | 3.616s  | 76.619s       | 1,198,582 |
-| Direct Render / Node           | 2.540s  | 7.321s        | 1,198,585 |
-| Vercel rewrite / curl HTTP/1.1 | 8.196s  | 73.162s       | 1,198,582 |
+A dedicated streaming-route experiment was built, tested locally and deployed in draft PR49. It did not improve the remote result: upstream headers took 2.298s, but only 937,067 of 1,198,584 bytes arrived by a 150-second diagnostic deadline. The experiment has been removed from the final implementation. An HTTP/2 diagnostic also reached its deadline; that result is inconclusive, not proof of a specific protocol or provider defect.
 
-The Vercel stream delivered successive ~128 KiB milestones over about 7–10 seconds rather than stalling only before headers. A public 628,032-byte font took 19.614s through Vercel; health JSON took 1.341s. Compression-disabled exports were also slow in the earlier acceptance run. Five local renders of the larger 45-row synthetic document took 189–293ms. Randomized embedded-font obfuscation changes ZIP bytes between exports, so byte-for-byte identity is not expected; content and layout must be checked separately.
+Repeated direct Render baseline downloads all completed: 17.206/73.840/33.746s sequentially and 31.309/28.651s concurrently. They remained variable. These samples support removing an unnecessary delivery hop, but do not prove a provider's internal root cause or establish production/cold-start performance. The earlier Vercel workload completed four of five requests; one concurrent request hit the 120-second deadline.
 
-These results locate the observed delay in the delivery path after headers, rather than proving a database query, document-generation, browser-only or compression defect. They do not identify a particular provider's internal fault or establish cold-start performance.
+## Final implementation
 
-## Candidate transport
+| Step                 | Behavior                                                                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discover destination | Same-origin `/api/download-config` returns only the validated public `API_ORIGIN`, using the existing deployment configuration.                                |
+| Authorize            | Existing cookie-authenticated API request obtains an encrypted, report/version-specific, 60-second ticket. No new secret or migration is required.             |
+| Transfer             | Browser sends the ticket in an Authorization header directly to Render, with account cookies omitted. The file avoids the Vercel rewrite.                      |
+| Recheck              | Render verifies ticket expiry, the original session, active account, current role and current/published/version visibility before rendering.                   |
+| Hand off             | Existing MIME/ZIP verification, filename, duplicate-action blocking, cancellation and browser download handoff remain active. Failures require explicit retry. |
 
-Two explicit Next Node route handlers stream current and historical Word downloads from the fixed API origin. The general API rewrite is a fallback so it cannot shadow these dynamic routes. All other API calls retain the existing rewrite.
+Tickets stay in memory and headers, never URLs or browser storage. They cannot authenticate normal API routes. Expiry is enforced by the API, not the device clock. They may be reused within their short lifetime for the same authorized report; no single-use guarantee is claimed. Direct CORS allows only the backend's existing `WEB_ORIGIN`, never wildcard or credentialed cross-origin access. The original Word renderer, editable content and all four embedded font faces are preserved. Ordinary API routing remains unchanged.
 
-Only the access cookie is forwarded to Express; the refresh cookie and unrelated browser cookies are excluded. Express retains authentication, current-role checks, report visibility and version authorization. Report/version parameters are validated, arbitrary destinations and queries are rejected, redirects are disallowed, and responses are private/no-store. No public download token, shared artifact cache, automatic retry or longer client deadline is added. Upstream cancellation is bounded at 110 seconds and linked to caller cancellation; streaming body failures remain subject to the frontend's existing interrupted-transfer handling. Server-Timing records upstream header latency without account identifiers.
+The temporary Vercel Automation Bypass was removed after the failed preview experiment; its explicitly approved ignored local file was deleted. No deployment protection was disabled.
 
-## Validation and rollout gate
+## Rollout gate
 
-141 logic tests passed, including streaming before the full body, minimal cookie forwarding, backend authorization failures, malformed parameters, cancellation and compressed-length handling. A built production server with an explicit local API substitute passed current/versioned streaming, missing-cookie denial, refresh-cookie exclusion and unchanged health fallback. The webpack production build with TypeScript and changed-file lint passed.
+Deploy the companion backend first, then merge/deploy this web change. Existing backend `WEB_ORIGIN` and access-token secret and existing web `API_ORIGIN` are reused; no manual credential setup is needed. Keep the previous Word endpoints for compatibility. A preview page on another origin is intentionally not allowed by staging CORS.
 
-A Vercel preview comparison is required before treating this candidate as a performance fix. Do not merge solely because the local tests pass. No production speed improvement is claimed yet.
+After deployment, verify real ticket issuance, browser CORS, current and historical file integrity, expiry/retry, logout/role denial and repeated/concurrent timing. Neither the old direct-Render baseline nor fixture tests certify the new deployed ticket flow. Keep performance acceptance open until that deployed check passes. No guaranteed latency or cold-start result is claimed.
+
+Validation of the final implementation: a clean backend run passed all 665 tests. The web passed all 140 logic tests, six affected report-history browser cases across the initial run and an isolated rerun, changed-file lint, formatting, whitespace and TypeScript, plus the supported webpack production build. The initial browser timeout occurred in its accessibility scan while the full backend suite was running; the same case passed in 6.6 seconds alone. The backend is published as PR37; deploy it before this web PR49. Final hosted checks and deployed ticket-flow qualification remain pending.

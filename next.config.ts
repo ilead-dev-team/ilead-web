@@ -21,14 +21,9 @@ const config: NextConfig = {
   poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   async rewrites() {
-    return {
-      fallback: [
-        {
-          source: "/api/v1/:path*",
-          destination: `${api.origin}/api/v1/:path*`,
-        },
-      ],
-    };
+    return [
+      { source: "/api/v1/:path*", destination: `${api.origin}/api/v1/:path*` },
+    ];
   },
   async headers() {
     return [
