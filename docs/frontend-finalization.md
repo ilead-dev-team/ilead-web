@@ -87,8 +87,8 @@ Completed live journeys now include session create/edit/save/cancel, report reop
 
 1. Live attendance and lesson correction, non-next confirmation and restoration passed. The latest-lesson label fix merged and was verified on the deployed app; see the dated acceptance record.
 2. Responsive review passed 114 loaded viewport/theme combinations across 19 core, administration and account/error surfaces, plus live mobile drawer keyboard checks. Failure-recovery checks passed separately in 44 fixture-backed browser cases. This review pass is complete; final merged-code regression and deployment verification remain required before release.
-3. Confirm browser download handoff and visually inspect Word pagination; automation capture/download failed during this pass.
-4. New transfer measurements reproduced a 77-second file transfer and the frontend's 60-second timeout failure. Merge/deploy the bounded file-transfer timeout/recovery fix, then verify the live browser handoff. Repeat controlled cold-start/load qualification before claiming consistent export performance; the infrastructure cause remains unproven.
+3. Live Word handoff passed after PR 46: the saved version-4 file appeared about 20 seconds after clicking Export and passed integrity/content checks. Its one-page layout was visually inspected in WordCraft. Finish multi-page/wrapped-row and Microsoft Word compatibility qualification; those are not established by the one-page sample.
+4. The bounded file-transfer timeout/recovery fix merged and live handoff passed. Repeat controlled cold-start/load qualification before claiming consistent export performance; the infrastructure cause of intermittent slow transfers remains unproven.
 5. Physical-device push acceptance after frontend completion, as requested by the owner.
 
 This first pass is a shared-shell improvement, not a claim that every page is finalized or flawless. Do not count fixture tests as deployed end-to-end qualification.
