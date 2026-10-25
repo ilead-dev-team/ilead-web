@@ -83,7 +83,9 @@ Validation: all87 existing affected browser cases passed, followed by all3 new t
 
 The merged main regression passed238 browser cases and134 logic tests. Live populated read journeys and40 three-role API checks are recorded separately in [deployed acceptance](deployed-acceptance.md); they do not replace mutation or physical-device qualification.
 
-1. Complete deployed create/edit/save/cancel/rework journeys through the UI, alongside the earlier API mutation evidence.
+Completed live journeys now include session create/edit/save/cancel, report reopen/save/confirm/resend, Facilitator detail changes and issue handling, and Sponsor change-request correction/resolution. See the dated acceptance record for exact coverage; this does not establish every workflow or failure path.
+
+1. Verify deployed lesson-entry correction and saved history through the UI; the prior lesson-progress mutation evidence is API-based.
 2. Finish manual responsive/light-dark/keyboard/error-state review across populated deployed screens.
 3. Confirm browser download handoff and visually inspect Word pagination; automation capture/download failed during this pass.
 4. Repeat export timing under cold-start/load conditions; initial slow results improved on subsequent profiles, with no established root cause yet.

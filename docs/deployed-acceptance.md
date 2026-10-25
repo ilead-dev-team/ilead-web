@@ -29,7 +29,7 @@ The completed run passed40 request checks:13 Coordinator,17 Sponsor and10 Facili
 ## Follow-ups
 
 - Word exports through the deployed frontend proxy took roughly57–89 seconds in the earlier measured runs; Excel and ordinary reads were much faster. The existing local Word-export regression passed in904ms after local loopback permission was granted. A subsequent direct API profile completed in6.4 seconds (headers4.9 seconds), and a repeat proxy profile completed in4.2 seconds (headers3.5 seconds), both without content encoding. The slowdown is intermittent; these measurements do not establish a persistent proxy/compression defect. Preserve the timing evidence and repeat under cold-start/load conditions before claiming consistent launch-ready export performance. No speculative caching/compression change was made.
-- The Coordinator session create/edit/cancel and author report rework journeys passed in the follow-up below. Broader Facilitator correction and Sponsor change-request journeys remain separate acceptance work.
+- Coordinator session create/edit/cancel, report rework, Facilitator detail changes/issues and Sponsor change-request resolution passed in the follow-ups below. These checks cover the stated journeys, not every configuration or failure condition.
 - Confirm browser download handoff and visual Word pagination with a functioning capture/download connection.
 - Complete physical-device push acceptance after frontend acceptance, as agreed.
 
@@ -52,3 +52,15 @@ DOM records and screenshots are saved under ignored `artifacts/deployed-browser/
 The automation's generic date fill updated the native value without updating the controlled form state. The accessible date setter successfully submitted the same date. This was an input-method limitation; it did not establish an application defect.
 
 Browser Word download waiting again timed out and detached the automation connection; the page was recovered in a fresh tab of the same browser. HTTP export integrity from the earlier pass still stands, but browser handoff is not certified. The packaged Word renderer also failed because the bundled runtime contains no LibreOffice `soffice.exe`; no page images were generated, so Word pagination remains unverified. Docker and the user's desktop office software were not used.
+
+## Remaining role journeys — 25 October 2026
+
+Using the existing synthetic accounts and QA roundtable, the following deployed browser journeys passed against the staging API/database:
+
+- The Facilitator changed the slogan and saved it. The summary reflected the new slogan; iChoose lesson 1 Choices, next lesson 2 Growth and attendance history stayed unchanged. No level or lesson editing controls were offered.
+- The Facilitator raised one marked Other issue explaining that this was an acceptance check and no progress change was requested. The saved issue appeared in the open list. The synthetic Coordinator resolved it with an explanatory note; the open list became empty and the resolved history retained the issue. On a fresh Facilitator login, the Resolved filter showed the same issue, Coordinator identity and resolution note. The saved slogan and unchanged progress also persisted across login.
+- The synthetic Sponsor confirmed one marked change request on sent version 3. The report changed to Changes requested with one open request. The author saw archive disabled while the request was open.
+- The author reopened the report, saved a clarification identifying its synthetic staging data, and explicitly resolved the request. The count became zero while the report remained Draft. Confirming and sending were separate actions; sending published version 4.
+- The Sponsor then opened version 4 with the clarification, a new first-read date and zero open requests. Both public requests appeared as resolved. The existing private Coordinator discussion was absent.
+
+Secret-free DOM observations and screenshots are retained in ignored `artifacts/deployed-browser/`. These are real UI observations; no runtime code changes or additional fixture-test totals are claimed. The synthetic issue and feedback records are retained as history. No actual lesson correction, external email, physical push delivery, document pagination or forced network-failure recovery was tested by this pass.
