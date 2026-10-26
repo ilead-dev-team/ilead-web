@@ -263,6 +263,16 @@ test("Facilitator sees own histories and edits details without progress fields, 
               source: "SESSION_ENTRY",
               recordedById: "c",
             },
+            ...Array.from({ length: 3 }, (_, index) => ({
+              lessonId: `extra-${index}`,
+              level: "ICHOOSE",
+              number: index + 3,
+              title: `Completed lesson ${index + 3}`,
+              completedOn: "2026-10-21",
+              sessionDate: "2026-10-21",
+              source: "SESSION_ENTRY",
+              recordedById: "c",
+            })),
           ],
         },
       },
@@ -270,6 +280,31 @@ test("Facilitator sees own histories and edits details without progress fields, 
   );
   await page.goto("/my-roundtable");
   await expect(page.getByText(/Before registration/)).toBeVisible();
+  const lessons = page.locator("#completed-lessons-list > li");
+  await expect(lessons).toHaveCount(3);
+  const more = page.getByRole("button", {
+    name: "View more (2 more)",
+    exact: true,
+  });
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await more.click();
+  await expect(lessons).toHaveCount(5);
+  const less = page.getByRole("button", { name: "View less", exact: true });
+  await expect(less).toHaveAttribute("aria-expanded", "true");
+  await less.click();
+  await expect(lessons).toHaveCount(3);
+  await more.click();
+  await page.getByLabel("History level", { exact: true }).selectOption("IDO");
+  await expect(
+    page.getByText("No completed lessons at this level."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /View more|View less/ }),
+  ).toHaveCount(0);
+  await page
+    .getByLabel("History level", { exact: true })
+    .selectOption("ICHOOSE");
+  await expect(lessons).toHaveCount(3);
   await expect(page.getByText("2026-10-14 · Met · Held session")).toBeVisible();
   await expect(page.getByLabel("Starting level")).toHaveCount(0);
   await page.getByLabel("Roundtable name", { exact: true }).fill("Summits");
