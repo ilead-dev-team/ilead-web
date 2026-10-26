@@ -259,21 +259,7 @@ function Results({
         <Link href="/roundtables">View roundtables</Link>
         <Link href="/reports">View reports</Link>
       </div>
-      <div className={styles.grid}>
-        <Pie
-          title="Roundtables by level"
-          rows={data.pies.roundtablesByLevel.map((r) => ({
-            ...r,
-            label: levelLabels[r.key],
-          }))}
-        />
-        <Pie
-          title="Roundtables by class"
-          rows={data.pies.roundtablesByClass.map((r) => ({
-            ...r,
-            label: classes[r.key]!,
-          }))}
-        />
+      <div className={styles.analysisGrid}>
         {attendance ? (
           <Pie
             title={`Last held session attendance · ${attendance.date}`}
@@ -310,6 +296,22 @@ function Results({
                 : statusLabels[r.key]!,
           }))}
         />
+        <Pie
+          title="Roundtables by level"
+          rows={data.pies.roundtablesByLevel.map((r) => ({
+            ...r,
+            label: levelLabels[r.key],
+          }))}
+        />
+        <Pie
+          title="Roundtables by class"
+          rows={data.pies.roundtablesByClass.map((r) => ({
+            ...r,
+            label: classes[r.key]!,
+          }))}
+        />
+      </div>
+      <div className={styles.operationsGrid}>
         <section className={styles.panel} aria-label="Stale roundtables">
           <h2>Stale roundtables</h2>
           <p className="text-sm text-muted-foreground">
@@ -458,10 +460,9 @@ export function Dashboard() {
   };
   if (!staff) return null;
   return (
-    <div className="grid min-w-0 gap-6">
+    <div className={styles.page}>
       <header className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Program overview</p>
           <h1>Welcome back, {user.name}.</h1>
           <p className={styles.heroDescription}>
             A clear view of the program, one session at a time.
@@ -490,16 +491,15 @@ export function Dashboard() {
           aria-label="Loading program overview"
           className={styles.loadingOverview}
         >
-          Loading program overview�
+          Loading program overview...
         </section>
       )}
-      <section className={styles.panel} aria-labelledby="dashboard-filters">
+      <section className={styles.filterBar} aria-labelledby="dashboard-filters">
         <div className={styles.panelHeading}>
           <h2 id="dashboard-filters">
             <SlidersHorizontal aria-hidden size={18} />
             Program filters
           </h2>
-          <p>Choose a view, then apply it to the dashboard and downloads.</p>
         </div>
         <Pending active={years.isPending} />
         {years.isError && (
@@ -583,58 +583,63 @@ export function Dashboard() {
                 ))}
               </Select>
             </Field>
-            <Field id="dashboard-from" label="From date">
-              <Input
-                id="dashboard-from"
-                type="date"
-                value={draft.from}
-                onChange={(e) => change("from", e.target.value)}
-                aria-invalid={!!invalid}
-              />
-            </Field>
-            <Field id="dashboard-to" label="To date">
-              <Input
-                id="dashboard-to"
-                type="date"
-                value={draft.to}
-                onChange={(e) => change("to", e.target.value)}
-                aria-invalid={!!invalid}
-              />
-            </Field>
-            <Field id="dashboard-roundtable" label="Roundtable">
-              <Select
-                id="dashboard-roundtable"
-                value={draft.roundtableId}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSelectedName(
-                    options.data?.data.find((r) => r.id === value)?.name ??
-                      selectedName,
-                  );
-                  change("roundtableId", value);
-                }}
-              >
-                <option value="">All active roundtables</option>
-                {draft.roundtableId &&
-                  !options.data?.data.some(
-                    (r) => r.id === draft.roundtableId,
-                  ) && (
-                    <option value={draft.roundtableId}>{selectedName}</option>
-                  )}
-                {options.data?.data.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
           </div>
+          <details className={styles.advancedFilters}>
+            <summary>More filters · dates and roundtable</summary>
+            <div className={styles.secondaryFilters}>
+              <Field id="dashboard-from" label="From date">
+                <Input
+                  id="dashboard-from"
+                  type="date"
+                  value={draft.from}
+                  onChange={(e) => change("from", e.target.value)}
+                  aria-invalid={!!invalid}
+                />
+              </Field>
+              <Field id="dashboard-to" label="To date">
+                <Input
+                  id="dashboard-to"
+                  type="date"
+                  value={draft.to}
+                  onChange={(e) => change("to", e.target.value)}
+                  aria-invalid={!!invalid}
+                />
+              </Field>
+              <Field id="dashboard-roundtable" label="Roundtable">
+                <Select
+                  id="dashboard-roundtable"
+                  value={draft.roundtableId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedName(
+                      options.data?.data.find((r) => r.id === value)?.name ??
+                        selectedName,
+                    );
+                    change("roundtableId", value);
+                  }}
+                >
+                  <option value="">All active roundtables</option>
+                  {draft.roundtableId &&
+                    !options.data?.data.some(
+                      (r) => r.id === draft.roundtableId,
+                    ) && (
+                      <option value={draft.roundtableId}>{selectedName}</option>
+                    )}
+                  {options.data?.data.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </details>
           {invalid && (
             <p role="alert" className="mb-4 text-destructive">
               {invalid}
             </p>
           )}
-          <div className="flex flex-wrap gap-3">
+          <div className={styles.filterActions}>
             <Button>Apply filters</Button>
             <Button
               type="button"

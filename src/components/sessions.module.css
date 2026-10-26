@@ -1,14 +1,8 @@
 .page {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
+  composes: page from "./workspace-surfaces.module.css";
 }
 .panel {
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  min-width: 0;
+  composes: panel from "./workspace-surfaces.module.css";
 }
 .panel > h2 {
   margin-bottom: 12px;
@@ -52,11 +46,7 @@
   text-decoration: none;
 }
 .tableViewport {
-  max-width: 100%;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  composes: tableViewport from "./workspace-surfaces.module.css";
 }
 .table {
   width: 100%;

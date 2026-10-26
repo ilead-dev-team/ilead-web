@@ -72,6 +72,12 @@ test("Coordinator dashboard renders program charts, counts, operational links an
   expect((await overview.boundingBox())!.y).toBeLessThan(
     (await filters.boundingBox())!.y,
   );
+  await expect(page.getByLabel("From date", { exact: true })).toBeHidden();
+  await expect(page.getByLabel("Academic year", { exact: true })).toBeVisible();
+  expect(
+    (await page.getByRole("heading", { name: /Welcome back/ }).boundingBox())!
+      .height,
+  ).toBeLessThan(80);
   await expect(
     page.getByRole("link", { name: "Create session", exact: true }),
   ).toHaveAttribute("href", "/sessions/new");
@@ -115,6 +121,16 @@ test("Coordinator dashboard renders program charts, counts, operational links an
     fullPage: true,
   });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 768, height: 1024 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("dashboard-tablet-dark.png"),
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(
@@ -173,6 +189,7 @@ test("all applied filters reach both summary and each Excel dataset; drafts disa
     });
   });
   await page.goto("/dashboard");
+  await page.getByText(/^More filters/).click();
   await expect(
     page.getByRole("button", { name: "Download Excel" }),
   ).toBeEnabled();
@@ -243,6 +260,7 @@ test("invalid date ranges retain input without requesting a summary or export", 
     return r.fulfill({ json: { data: summary() } });
   });
   await page.goto("/dashboard");
+  await page.getByText(/^More filters/).click();
   await expect(
     page.getByRole("button", { name: "Download Excel" }),
   ).toBeEnabled();
@@ -324,6 +342,7 @@ test("failed summary retries, keeps applied dates, and does not display cached f
       : r.fulfill({ json: { data: summary() } }),
   );
   await page.goto("/dashboard");
+  await page.getByText(/^More filters/).click();
   await expect(
     page.getByText("Reports awaiting sending", { exact: true }),
   ).toBeVisible();
@@ -417,6 +436,7 @@ test("roundtable lookup supports bounded search and pagination while retaining t
     });
   });
   await page.goto("/dashboard");
+  await page.getByText(/^More filters/).click();
   await page
     .getByLabel("Roundtable", { exact: true })
     .selectOption(ids.roundtable);

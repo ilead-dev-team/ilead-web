@@ -49,3 +49,35 @@ the dashboard utility follow-up, a fresh production build and all 10 dashboard
 cases passed. Strict TypeScript, focused source lint, formatting and whitespace
 checks passed. Reports desktop/mobile and dashboard screenshots were visually
 inspected. These results precede PR review, merge and deployed verification.
+
+## Shared platform layout
+
+The dashboard, administration, sessions, reports, roundtables and general workspace
+screens compose `workspace-surfaces.module.css` rather than maintaining separate
+page, panel and table-container rules. This keeps heading scale, vertical rhythm,
+mobile padding and overflow behavior consistent. Domain-specific grids and dense
+editing tables remain in their screen modules. Account entry pages and printable
+report content retain their purpose-specific layouts and existing brand tokens.
+
+The workspace header identifies the current area. Dashboard content follows this
+order: welcome and primary action, summary metrics, filters, attendance/report
+charts, distribution charts, operational lists, then downloads and reminders.
+The existing charts, source data, role restrictions and approved colors remain.
+Dates and roundtable selection sit under "More filters"; closing that disclosure
+does not clear draft values. Apply and Clear keep their existing semantics, and
+exports remain disabled when filters have unapplied changes. Primary filters and
+actions share a row where space permits and wrap on smaller screens.
+
+Facilitator pages use the same left alignment and spacing as other workspace
+pages, with a readable width for registration and roundtable details. Sparse
+collections use responsive grids; tables remain where comparing multiple fields
+or entering session data benefits from aligned columns.
+
+Shared-layout follow-up verification on 26 October 2026: the final production
+webpack build and its TypeScript phase passed, all 140 logic tests passed, and
+all 246 browser cases passed (5.1 minutes, two workers). Focused lint, formatting
+and whitespace checks passed. Dashboard screenshots were inspected on desktop,
+tablet and phone; Reports and administration screenshots were also reviewed.
+The fixture suite emits expected local API proxy connection warnings for
+unmocked background requests; it does not run a production backend. These
+results cover the local build, not a merged or deployed release.

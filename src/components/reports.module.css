@@ -1,15 +1,15 @@
 .page {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
+  composes: page from "./workspace-surfaces.module.css";
 }
 .panel,
 .preview {
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
   min-width: 0;
+}
+.panel {
+  composes: panel from "./workspace-surfaces.module.css";
+}
+.preview {
+  composes: panel from "./workspace-surfaces.module.css";
 }
 .panel > h2 {
   margin-bottom: 12px;
@@ -42,11 +42,7 @@
   justify-self: start;
 }
 .tableViewport {
-  max-width: 100%;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  composes: tableViewport from "./workspace-surfaces.module.css";
 }
 .table {
   width: 100%;

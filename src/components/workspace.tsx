@@ -41,6 +41,21 @@ export function Workspace({ children }: { children: ReactNode }) {
   );
 }
 function WorkspaceContent({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const area = pathname.startsWith("/settings/")
+    ? "Settings"
+    : ({
+        dashboard: "Overview",
+        roundtables: "Roundtables",
+        "my-roundtable": "My roundtable",
+        sessions: "Sessions",
+        reports: "Reports",
+        curriculum: "Curriculum",
+        issues: "Issues",
+        people: "People",
+        mailbox: "Program email",
+        notifications: "Notifications",
+      }[pathname.split("/")[1] ?? ""] ?? "Workspace");
   const drawer = useRef<HTMLDialogElement>(null),
     menu = useRef<HTMLButtonElement>(null);
   const push = usePushDevice();
@@ -66,7 +81,7 @@ function WorkspaceContent({ children }: { children: ReactNode }) {
           <Brand />
         </div>
         <div className={styles.context}>
-          <span>iLead workspace</span>
+          <span>iLead workspace / {area}</span>
           <strong>
             {user.role === "COORDINATOR"
               ? "Coordinator"
