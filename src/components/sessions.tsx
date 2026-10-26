@@ -512,10 +512,7 @@ export function Sessions() {
   return (
     <section className={styles.page}>
       <h1>Sessions</h1>
-      <p className="mb-5 text-muted-foreground">
-        Record held sessions and inspect entry completion. Cancellation retains
-        the session with its reason.
-      </p>
+
       <Link
         data-slot="button"
         className={styles.primaryAction}
@@ -544,16 +541,11 @@ export function Sessions() {
             ))}
           </Select>
         </Field>
-        <Field
-          id="sessions-term"
-          label="Term"
-          help="Choose an academic year to filter by one of its terms."
-        >
+        <Field id="sessions-term" label="Term">
           <Select
             id="sessions-term"
             value={termId}
             disabled={!selectedYear}
-            aria-describedby="sessions-term-help"
             onChange={(event) => {
               setTermId(event.target.value);
               setPage(1);
@@ -636,20 +628,22 @@ export function Sessions() {
           </p>
         )}
       </form>
-      <Field id="sessions-status" label="Status">
-        <Select
-          id="sessions-status"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All</option>
-          <option value="HELD">Held</option>
-          <option value="CANCELLED">Cancelled</option>
-        </Select>
-      </Field>
+      <div className={styles.statusFilter}>
+        <Field id="sessions-status" label="Status">
+          <Select
+            id="sessions-status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All</option>
+            <option value="HELD">Held</option>
+            <option value="CANCELLED">Cancelled</option>
+          </Select>
+        </Field>
+      </div>
       <Pending active={query.isPending} />
       <Feedback error={query.error} />
       {query.isError && (
@@ -694,9 +688,12 @@ export function Sessions() {
                           {row.status === "HELD" ? "Held" : "Cancelled"}
                         </span>
                         {row.cancellationReason && (
-                          <p className="break-words">
-                            Reason: {row.cancellationReason}
-                          </p>
+                          <details>
+                            <summary>Reason</summary>
+                            <p className="break-words">
+                              {row.cancellationReason}
+                            </p>
+                          </details>
                         )}
                       </td>
                       <td>
@@ -714,10 +711,6 @@ export function Sessions() {
                         <p>
                           {row.counts.met + row.counts.notMet} of{" "}
                           {row.counts.roundtables} entered
-                        </p>
-                        <p className={styles.supporting}>
-                          {row.counts.met} met · {row.counts.notMet} did not
-                          meet · {row.counts.pending} pending
                         </p>
                       </td>
                       <td>

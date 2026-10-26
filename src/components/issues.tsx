@@ -209,11 +209,6 @@ export function Issues() {
         <h1 ref={heading} tabIndex={-1}>
           {user.role === "FACILITATOR" ? "My issues" : "Roundtable issues"}
         </h1>
-        <p className="text-muted-foreground">
-          {user.role === "FACILITATOR"
-            ? "Ask a Coordinator to correct recorded progress or roundtable details."
-            : "Review the issue, make any required correction, then record its resolution."}
-        </p>
       </header>
       {user.role === "FACILITATOR" && (
         <form

@@ -1084,7 +1084,7 @@ for (const theme of ["light", "dark"] as const)
         page.getByText("Configuration is not proof of delivery.", {
           exact: false,
         }),
-      ).toBeVisible();
+      ).toHaveCount(0);
       if (connected)
         await expect(
           page.getByText("Sending configured: ilead@program.example.test"),

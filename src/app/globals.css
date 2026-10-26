@@ -203,6 +203,7 @@ h1 {
   color: var(--muted-foreground);
 }
 .field {
+  align-content: start;
   display: grid;
   gap: 7px;
   margin-bottom: 20px;
@@ -258,6 +259,10 @@ h1 {
   font-size: 13px;
 }
 .notice {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
+  overflow-wrap: anywhere;
   padding: 14px 16px;
   margin: 16px 0;
   border: 1px solid var(--border);
@@ -335,4 +340,20 @@ nav[aria-label="Main navigation"] a:hover {
 a:not([data-slot="button"]) {
   color: var(--foreground);
   text-decoration: underline;
+}
+
+.search-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+}
+.search-toolbar .field {
+  flex: 1 1 220px;
+  margin-bottom: 0;
+}
+.search-toolbar > button {
+  flex: none;
 }

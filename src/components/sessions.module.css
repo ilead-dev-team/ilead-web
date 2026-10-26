@@ -130,3 +130,23 @@
     width: 100%;
   }
 }
+
+.dateFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+}
+.dateFilters :global(.field) {
+  width: min(100%, 280px);
+}
+.dateFilters > button {
+  flex: none;
+}
+.calendarFilters {
+  align-items: start;
+}
+.statusFilter {
+  width: 100%;
+  max-width: 280px;
+}

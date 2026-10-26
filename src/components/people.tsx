@@ -717,9 +717,7 @@ export function People() {
     <div className={styles.page}>
       <header>
         <h1>People</h1>
-        <p className="text-muted-foreground">
-          Inspect program accounts and manage invitation-only access.
-        </p>
+
         <div className="mt-3 flex flex-wrap gap-4">
           <Link href="/mailbox">Program email</Link>
           <Link href="/people/recovery">Account recovery</Link>

@@ -502,11 +502,7 @@ export function Configuration({ mode }: { mode: Mode }) {
   return (
     <section className={styles.page}>
       <h1>{mode === "activities" ? "Activity types" : "Section library"}</h1>
-      <p className="mb-6 text-muted-foreground">
-        {mode === "activities"
-          ? "Add, rename, reorder or deactivate activity types. Historical session records are retained."
-          : "Add custom report sections or rename existing sections. Archive custom sections to hide them from future selection. System sections stay available; custom sections are not preselected."}
-      </p>
+
       {active && (
         <p className="notice mb-4">
           Finish or discard your current edits before changing another record,

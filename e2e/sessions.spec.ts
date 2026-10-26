@@ -568,6 +568,20 @@ test("session table shows entry totals and report state with contained mobile sc
   await page.goto("/sessions");
   const table = page.getByRole("region", { name: "Sessions list" });
   await expect(table.getByText("3 of 4 entered")).toBeVisible();
+  const year = (await page
+    .getByLabel("Academic year", { exact: true })
+    .boundingBox())!;
+  const term = (await page.getByLabel("Term", { exact: true }).boundingBox())!;
+  expect(Math.abs(year.y - term.y)).toBeLessThan(2);
+  const date = (await page
+    .getByLabel("To date", { exact: true })
+    .boundingBox())!;
+  const apply = (await page
+    .getByRole("button", { name: "Apply dates" })
+    .boundingBox())!;
+  expect(Math.abs(date.y - apply.y)).toBeLessThan(2);
+  expect(apply.width).toBeLessThan(200);
+
   await expect(
     table.getByText("Changes requested", { exact: true }),
   ).toBeVisible();

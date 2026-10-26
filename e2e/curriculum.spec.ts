@@ -161,12 +161,15 @@ test("uncertain save retains text and unlocks only after a valid read without re
   await form.getByRole("button", { name: "Check saved title" }).focus();
   await page.keyboard.press("Enter");
   await expect(
-    form.getByText("Last loaded title: Stored despite lost reply", {
-      exact: true,
-    }),
+    form.getByText(
+      "Saved title: Stored despite lost reply. Your edit is unchanged.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   await expect(
-    form.getByText("Saved title loaded above.", { exact: false }),
+    form.getByText("Your edit is unchanged.", { exact: false }),
   ).toBeVisible();
   await expect(input).toHaveValue("Retained desired title");
   await expect(input).toBeEnabled();
@@ -243,9 +246,7 @@ test("confirmed save stays confirmed after refresh failure and refresh retry onl
   failedRead = false;
   await retry.click();
   await expect(retry).toHaveCount(0);
-  await expect(
-    form.getByText("Last loaded title: Confirmed wording", { exact: true }),
-  ).toBeVisible();
+  await expect(form.getByRole("textbox")).toHaveValue("Confirmed wording");
   expect(posts).toBe(1);
 });
 test("level switching preserves independent drafts and an uncertain save guard", async ({

@@ -300,11 +300,7 @@ export function Reminders() {
           Refresh reminders
         </Button>
       </div>
-      <p className="my-3 text-sm text-muted-foreground">
-        Active reminders only. Snooze for one, two or three calendar days until
-        08:00 Kigali. Snoozing does not complete the task. Due status updates
-        when this list refreshes.
-      </p>
+
       <Pending active={query.isFetching} />
       {query.isError && (
         <>
@@ -421,10 +417,6 @@ export function NotificationInbox() {
     <div className={styles.page}>
       <header>
         <h1>Notifications</h1>
-        <p className="text-muted-foreground">
-          Your updates and reminders. Opening a destination does not mark a
-          notice read. Times are shown in Kigali.
-        </p>
       </header>
       <section aria-label="Notification inbox">
         <h2 className="sr-only">Inbox notices</h2>

@@ -297,10 +297,6 @@ export function AcademicYears() {
     <div className={styles.page}>
       <header>
         <h1>Academic years</h1>
-        <p className="text-muted-foreground">
-          Configure the approved NESA year and all three terms. Dates are
-          calendar dates; holidays between terms are allowed.
-        </p>
       </header>
       <section
         aria-labelledby="current-calendar-title"

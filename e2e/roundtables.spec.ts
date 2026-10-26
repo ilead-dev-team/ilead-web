@@ -60,27 +60,14 @@ test("Sponsor list labels zero and level-boundary progress and confines mobile t
     page.getByRole("columnheader", { name: "Current level", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", {
-      name: "iChoose: latest completed lesson 0 of 16",
-      exact: true,
-    }),
+    page.getByText("No lesson completed yet", { exact: true }),
   ).toBeVisible();
+  await expect(page.getByText(/^Lesson 16:/)).toBeVisible();
   await expect(
-    page.getByRole("img", {
-      name: "iChoose: latest completed lesson 16 of 16",
-      exact: true,
-    }),
+    page.getByText("Lesson 2: Growth", { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("img", {
-      name: "iChoose: latest completed lesson 2 of 16",
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(page.getByText("Latest lesson", { exact: true })).toHaveCount(3);
-  await expect(
-    page.getByRole("img", { name: /lessons completed/ }),
-  ).toHaveCount(0);
+  await expect(page.getByText(row.slogan, { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Latest lesson", { exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("columnheader", { name: "Actions", exact: true }),
   ).toHaveCount(0);
@@ -195,7 +182,7 @@ test("Coordinator filters, confirms trash, and handles restore failures", async 
     .click();
   await page.getByRole("button", { name: "Confirm move to trash" }).click();
   await expect(page.getByText("No matching roundtables.")).toBeVisible();
-  await page.getByRole("link", { name: "Open trash" }).click();
+  await page.getByRole("link", { name: "View trash" }).click();
   await page.getByRole("button", { name: "Restore roundtable" }).click();
   await page.getByRole("button", { name: "Confirm restore" }).click();
   await expect(

@@ -79,18 +79,13 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
         </p>
       )}
       <RoundtableRefresh views={views} />
-      <p className="mb-5 text-muted-foreground">
-        {trash
-          ? "Roundtables can be restored within 30 days. Purge and restore eligibility are enforced by the server."
-          : "Browse roundtables and inspect recorded progress. Completed roundtables have their own view."}
-      </p>
+
       {user.role === "COORDINATOR" && (
-        <Link
-          className="underline"
-          href={trash ? "/roundtables" : "/roundtables/trash"}
-        >
-          {trash ? "Back to roundtables" : "Open trash"}
-        </Link>
+        <Button asChild variant="outline">
+          <Link href={trash ? "/roundtables" : "/roundtables/trash"}>
+            {trash ? "Back to roundtables" : "View trash"}
+          </Link>
+        </Button>
       )}
       <form
         className={styles.search}
@@ -220,10 +215,6 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                     <tr key={row.id}>
                       <td>
                         <div className={styles.tableIdentity}>
-                          <RoundtableProgress
-                            level={row.currentLevel}
-                            latestLesson={row.lastLesson?.number ?? 0}
-                          />
                           <div>
                             <h2>
                               {trash ? (
@@ -239,7 +230,6 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                                 ? `Lesson ${row.lastLesson.number}: ${row.lastLesson.title}`
                                 : "No lesson completed yet"}
                             </p>
-                            <p>{row.slogan}</p>
                           </div>
                         </div>
                       </td>

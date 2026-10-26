@@ -132,11 +132,7 @@ export function Reports() {
   return (
     <section className={styles.page}>
       <h1>Reports</h1>
-      <p className="mb-5 text-muted-foreground">
-        {user.role === "SPONSOR"
-          ? "Read the latest sent report snapshots. Work in progress stays private."
-          : "Create reports from held sessions. Only the author can edit and deliver them."}
-      </p>
+
       <div className={styles.toolbar}>
         <form
           className={styles.search}
