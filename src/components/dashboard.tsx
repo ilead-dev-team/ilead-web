@@ -122,22 +122,15 @@ function ExportControls({
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setNotice(
-        `${exportLabels[kind]} Excel file handed to your browser. Check Downloads for the file.`,
-      );
+      setNotice(`${exportLabels[kind]} download started.`);
     },
   });
   return (
     <section className={styles.panel} aria-label="Excel downloads">
       <h2>Excel downloads</h2>
-      <p className="text-sm text-muted-foreground">
-        Uses the applied filters. Active, nontrashed roundtables only. Report
-        lists use year, term and dates; class, level and roundtable do not
-        narrow reports. Undated enrollment lessons are omitted when term or
-        dates are selected.
-      </p>
+
       <div className="mt-4 flex flex-wrap items-end gap-3">
-        <Field id="export-kind" label="Dataset">
+        <Field id="export-kind" label="Download">
           <Select
             id="export-kind"
             value={kind}
@@ -189,38 +182,33 @@ function SummaryCards({
       label: "Active roundtables",
       value: data.cards.activeRoundtables,
       icon: UsersRound,
-      note: "Current active population",
     },
     {
       label: "Sessions held",
       value: data.cards.sessionsHeld,
       icon: CalendarDays,
-      note: "In the applied period",
     },
     {
       label: "Stale roundtables",
       value: data.cards.staleRoundtables,
       icon: Clock3,
-      note: "May need a follow-up",
     },
     role === "COORDINATOR"
       ? {
           label: "Reports awaiting sending",
           value: reportCount,
           icon: FileText,
-          note: "Draft and confirmed reports",
         }
       : {
           label: "Reports received",
           value: reportCount,
           icon: FileText,
-          note: "Published reports only",
         },
   ];
   return (
     <section aria-label="Program overview">
       <dl className={styles.cards}>
-        {cards.map(({ label, value, icon: Icon, note }) => (
+        {cards.map(({ label, value, icon: Icon }) => (
           <div className={`${styles.panel} ${styles.summaryCard}`} key={label}>
             <dt>
               <span>{label}</span>
@@ -228,7 +216,6 @@ function SummaryCards({
             </dt>
             <dd>
               <span>{value}</span>
-              <small>{note}</small>
             </dd>
           </div>
         ))}
@@ -246,11 +233,6 @@ function Results({
   const attendance = data.pies.lastSessionAttendance;
   return (
     <>
-      <p className="text-sm text-muted-foreground">
-        Academic year: {data.academicYear.label}. Current active population;
-        completed roundtables are separate. Session and report periods follow
-        the applied filters.
-      </p>
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
         <p>Completed roundtables: {data.cards.completedRoundtables}</p>
         <p>Cancelled sessions: {data.cards.sessionsCancelled}</p>
@@ -314,10 +296,7 @@ function Results({
       <div className={styles.operationsGrid}>
         <section className={styles.panel} aria-label="Stale roundtables">
           <h2>Stale roundtables</h2>
-          <p className="text-sm text-muted-foreground">
-            No recorded progress in the last two held sessions of the selected
-            period. Showing up to 20.
-          </p>
+
           <ul className={styles.list}>
             {data.stale.length ? (
               data.stale.map((r) => (
@@ -331,18 +310,13 @@ function Results({
                 </li>
               ))
             ) : (
-              <li>
-                No stale roundtables in this selection. Two held sessions are
-                needed to assess inactivity.
-              </li>
+              <li>No stale roundtables.</li>
             )}
           </ul>
         </section>
         <section className={styles.panel} aria-label="Latest sessions">
           <h2>Latest sessions</h2>
-          <p className="text-sm text-muted-foreground">
-            Up to 10 sessions in the selected period.
-          </p>
+
           <ul className={styles.list}>
             {data.latestSessions.length ? (
               data.latestSessions.map((s) => (
@@ -368,10 +342,7 @@ function Results({
             aria-label="Unregistered Facilitators"
           >
             <h2>Unregistered Facilitators</h2>
-            <p className="text-sm text-muted-foreground">
-              Verified active Facilitators without a registered roundtable.
-              Showing up to 20.
-            </p>
+
             <ul className={styles.list}>
               {data.unregisteredFacilitators.length ? (
                 data.unregisteredFacilitators.map((person) => (
@@ -464,9 +435,6 @@ export function Dashboard() {
       <header className={styles.hero}>
         <div>
           <h1>Welcome back, {user.name}.</h1>
-          <p className={styles.heroDescription}>
-            A clear view of the program, one session at a time.
-          </p>
         </div>
         <Button asChild>
           <Link
@@ -585,7 +553,7 @@ export function Dashboard() {
             </Field>
           </div>
           <details className={styles.advancedFilters}>
-            <summary>More filters · dates and roundtable</summary>
+            <summary>More filters</summary>
             <div className={styles.secondaryFilters}>
               <Field id="dashboard-from" label="From date">
                 <Input
@@ -659,9 +627,9 @@ export function Dashboard() {
           </div>
         </form>
         <details className="mt-5">
-          <summary className="cursor-pointer">Find another roundtable</summary>
+          <summary className="cursor-pointer">Find roundtable</summary>
           <form
-            className="mt-4"
+            className="search-toolbar mt-4"
             onSubmit={(e) => {
               e.preventDefault();
               setSearchQuery(search.trim());
@@ -717,8 +685,7 @@ export function Dashboard() {
         </details>
         {dirty && (
           <p role="status" className="mt-4">
-            Filters changed. Apply filters to update the dashboard and
-            downloads.
+            Unapplied filters.
           </p>
         )}
       </section>

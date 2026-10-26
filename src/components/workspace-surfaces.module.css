@@ -32,7 +32,8 @@
   line-height: 1.35;
 }
 .panel > button,
-.page > button {
+.page > button,
+.page > :global([data-slot="button"]) {
   justify-self: start;
 }
 .tableViewport {
@@ -53,4 +54,10 @@
   .panel {
     padding: 16px;
   }
+}
+
+p.panel {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
 }

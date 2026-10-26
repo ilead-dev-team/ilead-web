@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styles from "./roundtables.module.css";
 import { RoundtableProgress } from "./roundtable-progress";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
@@ -27,6 +28,12 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
   const views = useRoundtableViews();
   const heading = useRef<HTMLHeadingElement>(null);
   const focusFallback = useCallback(() => heading.current?.focus(), []);
+  useEffect(() => {
+    if (!trash && sessionStorage.getItem("roundtableReturnFocus") === "1") {
+      sessionStorage.removeItem("roundtableReturnFocus");
+      heading.current?.focus();
+    }
+  }, [trash]);
   const [notice, setNotice] = useState<string>();
   const [page, setPage] = useState(1),
     [search, setSearch] = useState(""),
@@ -79,18 +86,13 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
         </p>
       )}
       <RoundtableRefresh views={views} />
-      <p className="mb-5 text-muted-foreground">
-        {trash
-          ? "Roundtables can be restored within 30 days. Purge and restore eligibility are enforced by the server."
-          : "Browse roundtables and inspect recorded progress. Completed roundtables have their own view."}
-      </p>
+
       {user.role === "COORDINATOR" && (
-        <Link
-          className="underline"
-          href={trash ? "/roundtables" : "/roundtables/trash"}
-        >
-          {trash ? "Back to roundtables" : "Open trash"}
-        </Link>
+        <Button asChild variant="outline">
+          <Link href={trash ? "/roundtables" : "/roundtables/trash"}>
+            {trash ? "Back to roundtables" : "View trash"}
+          </Link>
+        </Button>
       )}
       <form
         className={styles.search}
@@ -210,7 +212,7 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                     <th scope="col">Current level</th>
                     <th scope="col">Facilitator</th>
                     <th scope="col">Status</th>
-                    {user.role === "COORDINATOR" && (
+                    {trash && user.role === "COORDINATOR" && (
                       <th scope="col">Actions</th>
                     )}
                   </tr>
@@ -220,10 +222,6 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                     <tr key={row.id}>
                       <td>
                         <div className={styles.tableIdentity}>
-                          <RoundtableProgress
-                            level={row.currentLevel}
-                            latestLesson={row.lastLesson?.number ?? 0}
-                          />
                           <div>
                             <h2>
                               {trash ? (
@@ -239,7 +237,6 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                                 ? `Lesson ${row.lastLesson.number}: ${row.lastLesson.title}`
                                 : "No lesson completed yet"}
                             </p>
-                            <p>{row.slogan}</p>
                           </div>
                         </div>
                       </td>
@@ -261,32 +258,29 @@ export function RoundtableList({ trash = false }: { trash?: boolean }) {
                           {row.status === "COMPLETED" ? "Completed" : "Active"}
                         </span>
                       </td>
-                      {user.role === "COORDINATOR" && (
+                      {trash && user.role === "COORDINATOR" && (
                         <td>
-                          {" "}
-                          {user.role === "COORDINATOR" && (
-                            <Lifecycle
-                              row={row}
-                              trash={trash}
-                              blocked={
-                                query.isError ||
-                                query.isFetching ||
-                                views.isPending
-                              }
-                              focusFallback={focusFallback}
-                              onSaved={async (message) => {
-                                if (message) setNotice(message);
-                                await views.mutateAsync().catch(() => {});
-                              }}
-                              onCheck={async () => {
-                                await query.refetch({ throwOnError: true });
-                                setNotice(
-                                  "Roundtables refreshed. Inspect the live and trash views; a missing row alone does not confirm the earlier action.",
-                                );
-                                focusFallback();
-                              }}
-                            />
-                          )}
+                          <Lifecycle
+                            row={row}
+                            trash={trash}
+                            blocked={
+                              query.isError ||
+                              query.isFetching ||
+                              views.isPending
+                            }
+                            focusFallback={focusFallback}
+                            onSaved={async (message) => {
+                              if (message) setNotice(message);
+                              await views.mutateAsync().catch(() => {});
+                            }}
+                            onCheck={async () => {
+                              await query.refetch({ throwOnError: true });
+                              setNotice(
+                                "Roundtables refreshed. Inspect the live and trash views; a missing row alone does not confirm the earlier action.",
+                              );
+                              focusFallback();
+                            }}
+                          />
                         </td>
                       )}
                     </tr>
@@ -343,6 +337,7 @@ export function RoundtableDetail({
 }) {
   const user = useSession(),
     target = own ? user.roundtableId : id;
+  const router = useRouter();
   const views = useRoundtableViews();
   const [level, setLevel] = useState("ICHOOSE");
   const [showAllLessons, setShowAllLessons] = useState(false);
@@ -369,7 +364,7 @@ export function RoundtableDetail({
     progress.data?.data.completed.filter((item) => item.level === level) ?? [];
   return (
     <section className={own ? styles.ownPage : styles.page}>
-      <h1>{own ? "My roundtable" : "Roundtable details"}</h1>
+      <h1 tabIndex={-1}>{own ? "My roundtable" : "Roundtable details"}</h1>
       <RoundtableRefresh views={views} />
       <Pending active={details.isFetching} />
       <Feedback error={details.error} />
@@ -509,6 +504,28 @@ export function RoundtableDetail({
               </ul>
             </section>
           </div>
+          {!own && user.role === "COORDINATOR" && (
+            <Lifecycle
+              row={row}
+              trash={false}
+              blocked={details.isError || details.isFetching || views.isPending}
+              focusFallback={() =>
+                document.querySelector<HTMLElement>("h1")?.focus()
+              }
+              onSaved={async () => {
+                await views.mutateAsync().catch(() => {});
+                sessionStorage.setItem("roundtableReturnFocus", "1");
+                router.push("/roundtables");
+              }}
+              onCheck={async () => {
+                readRoundtablePage(
+                  await api("/roundtables?page=1&pageSize=20"),
+                  1,
+                  false,
+                );
+              }}
+            />
+          )}
           {user.role !== "SPONSOR" && (
             <DetailsEditor
               key={row.id}

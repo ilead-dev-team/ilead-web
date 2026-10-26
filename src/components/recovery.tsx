@@ -116,10 +116,7 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
   return (
     <div className={styles.page}>
       <h1>Account recovery</h1>
-      <p className="text-muted-foreground">
-        Send a one-hour reset link to the account’s stored email through the
-        configured <Link href="/mailbox">account email service</Link>.
-      </p>
+
       {requestId !== undefined && (
         <p className="my-4">
           <Link href="/people/recovery">Back to recovery queue</Link>
@@ -317,9 +314,9 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
         </h2>
         <p id="send-reset-help" className="my-4 break-words">
           Send a one-hour reset link to {review?.user.name} at{" "}
-          {review?.user.email}. The recipient cannot be changed here. The email
-          uses the configured account email service.
+          {review?.user.email}.
         </p>
+
         <Feedback error={send.error} />
         <Pending active={busy} />
         {send.isError && (

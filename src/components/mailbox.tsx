@@ -93,11 +93,7 @@ export function Mailbox() {
           ? "Program email"
           : "Connected mailbox"}
       </h1>
-      <p className="text-muted-foreground">
-        {query.data?.scope === "PROGRAM"
-          ? "Invitations and reset links use the shared iLead sender. Coordinators do not need to connect a Google account."
-          : "Invitations and reset links are sent through your explicitly authorized Gmail account."}
-      </p>
+
       <Pending active={query.isPending || query.isFetching || busy} />
       <Feedback error={query.error || connect.error || disconnect.error} />
       <Button
@@ -123,25 +119,18 @@ export function Mailbox() {
         </p>
       )}
       {query.data?.scope === "PROGRAM" && !query.isError && (
-        <section aria-label="Program email status" className={styles.panel}>
+        <section
+          aria-label="Program email status"
+          className={`${styles.panel} w-fit max-w-full justify-self-start`}
+        >
           <p className="break-words">
             {query.data.connected
               ? `Sending configured: ${query.data.address}`
               : "Program email is not configured or sending is disabled."}
           </p>
-          <p>
-            The deployment custodian manages the shared sender and provider
-            access. Removing a Coordinator does not remove this sender.
-          </p>
-          <p>
-            Configuration is not proof of delivery. Provider verification and a
-            real invitation and recovery test are required before rollout.
-          </p>
+
           {!query.data.connected && (
-            <p role="status">
-              Ask the deployment custodian to complete provider verification and
-              enable account email, then refresh this page.
-            </p>
+            <p role="status">Contact an administrator to enable email.</p>
           )}
         </section>
       )}

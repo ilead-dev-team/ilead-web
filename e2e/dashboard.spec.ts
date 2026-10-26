@@ -56,7 +56,7 @@ test("Coordinator dashboard renders program charts, counts, operational links an
   await setup(page);
   await page.goto("/dashboard");
   await expect(
-    page.getByText("Academic year: 2026–27.", { exact: false }),
+    page.getByRole("heading", { name: /Welcome back/ }),
   ).toBeVisible();
   await expect(
     page.getByText("Reports awaiting sending", { exact: true }),
@@ -73,6 +73,32 @@ test("Coordinator dashboard renders program charts, counts, operational links an
     (await filters.boundingBox())!.y,
   );
   await expect(page.getByLabel("From date", { exact: true })).toBeHidden();
+  await page.getByText("Find roundtable", { exact: true }).click();
+  const search = (await page
+    .getByLabel("Search roundtable names")
+    .boundingBox())!;
+  const searchAction = (await page
+    .getByRole("button", { name: "Search roundtables", exact: true })
+    .boundingBox())!;
+  expect(search.width).toBeLessThan(600);
+  expect(searchAction.x - search.x - search.width).toBeGreaterThanOrEqual(11);
+  expect(Math.abs(search.y - searchAction.y)).toBeLessThan(2);
+  await page.screenshot({
+    path: testInfo.outputPath("dashboard-search.png"),
+    fullPage: true,
+  });
+  const emptyReminder = page.getByText("No active reminders on this page.", {
+    exact: true,
+  });
+  await expect(emptyReminder).toBeVisible();
+  const emptyWidth = (await emptyReminder.boundingBox())!.width;
+  const reminderWidth = (await page
+    .getByRole("region", { name: "My reminders" })
+    .boundingBox())!.width;
+  expect(emptyWidth).toBeLessThan(reminderWidth - 20);
+
+  await page.getByText("Find roundtable", { exact: true }).click();
+
   await expect(page.getByLabel("Academic year", { exact: true })).toBeVisible();
   expect(
     (await page.getByRole("heading", { name: /Welcome back/ }).boundingBox())!
@@ -225,7 +251,7 @@ test("all applied filters reach both summary and each Excel dataset; drafts disa
     expected,
   );
   for (const kind of ["roundtables", "progress", "attendance", "reports"]) {
-    await page.getByLabel("Dataset", { exact: true }).selectOption(kind);
+    await page.getByLabel("Download", { exact: true }).selectOption(kind);
     const event = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download Excel" }).click();
     expect((await event).suggestedFilename()).toBe(`iLead_${kind}.xlsx`);
@@ -314,7 +340,7 @@ test("download errors and wrong file responses never claim success; retry uses r
       hasText: /Check the filters|Narrow the filters|valid Excel file/,
     }),
   ).toContainText("Narrow the filters");
-  await expect(page.getByText(/handed to your browser/)).toHaveCount(0);
+  await expect(page.getByText(/download started/)).toHaveCount(0);
   mode = 1;
   await page.getByRole("button", { name: "Download Excel" }).click();
   await expect(
@@ -322,13 +348,13 @@ test("download errors and wrong file responses never claim success; retry uses r
       hasText: /Check the filters|Narrow the filters|valid Excel file/,
     }),
   ).toContainText("valid Excel file");
-  await expect(page.getByText(/handed to your browser/)).toHaveCount(0);
+  await expect(page.getByText(/download started/)).toHaveCount(0);
   mode = 2;
   const event = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download Excel" }).click();
   await event;
   await expect(
-    page.getByRole("status").filter({ hasText: "handed to your browser" }),
+    page.getByRole("status").filter({ hasText: "download started" }),
   ).toBeVisible();
 });
 test("failed summary retries, keeps applied dates, and does not display cached figures or exports", async ({
@@ -440,7 +466,7 @@ test("roundtable lookup supports bounded search and pagination while retaining t
   await page
     .getByLabel("Roundtable", { exact: true })
     .selectOption(ids.roundtable);
-  await page.getByText("Find another roundtable", { exact: true }).click();
+  await page.getByText("Find roundtable", { exact: true }).click();
   await page.getByRole("button", { name: "Next roundtables" }).click();
   await expect(page.getByText("Roundtable page 2 of 2")).toBeVisible();
   await expect(page.getByLabel("Roundtable", { exact: true })).toHaveValue(

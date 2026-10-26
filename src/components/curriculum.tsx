@@ -153,9 +153,7 @@ function LessonEditor({
           </Button>
         </div>
       </Field>
-      <p className="mt-3 break-words text-sm text-muted-foreground">
-        Last loaded title: {item.title}
-      </p>
+
       <Feedback error={mutation.error} />
       <Pending active={mutation.isPending || checking} />
       {uncertain && (
@@ -177,8 +175,7 @@ function LessonEditor({
       <Feedback error={checkError} />
       {checked && (
         <p className="notice" role="status">
-          Saved title loaded above. Compare it with your retained edit before
-          saving; this read does not confirm the earlier save.
+          Saved title: {item.title}. Your edit is unchanged.
         </p>
       )}
       {saved && <p role="status">Lesson {item.number} saved.</p>}
@@ -225,11 +222,7 @@ export function Curriculum() {
   return (
     <section className={styles.page}>
       <h1>Curriculum</h1>
-      <p className="mb-6 text-muted-foreground">
-        Edit lesson titles used throughout iLead. Levels and lesson numbers are
-        fixed. Saved titles apply to future views of existing records. Edits
-        stay while switching levels; save before leaving this page.
-      </p>
+
       <Pending active={query.isFetching || views.isPending} />
       <Feedback error={query.error} />
       {query.isError && (
