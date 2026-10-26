@@ -34,6 +34,15 @@
   border-bottom: 1px solid var(--border);
   overflow-wrap: anywhere;
 }
+.lesson > :global(.field) {
+  margin-bottom: 0;
+}
+.lessonControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
 .filter {
   max-width: 240px;
 }
