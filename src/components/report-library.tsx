@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "@/lib/api";
-import { metadata } from "@/lib/configuration";
+import { metadata, sectionKindLabels } from "@/lib/configuration";
 import { librarySection, newReportSection } from "@/lib/report-library";
 import type { ReportSection } from "@/lib/reports";
 import { useSession } from "./session";
@@ -86,7 +86,7 @@ export function ReportLibrary({
                         className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
                       >
                         <span>
-                          {template.title} · {template.kind}
+                          {template.title} · {sectionKindLabels[template.kind]}
                           {used
                             ? " · Already included"
                             : template.isMandatory

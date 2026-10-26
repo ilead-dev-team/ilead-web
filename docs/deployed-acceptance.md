@@ -108,3 +108,42 @@ The saved file passed ZIP integrity and document-XML checks, contained the expec
 Launching WordCraft through its verified executable path succeeded. The actual downloaded file was opened from its Recent list and inspected at 100% zoom. The shield, Carlito typography, institutional heading, summary, four-column progress table and final notes were readable without clipping or overlap; the status bar showed Page 1 of 1. The lower page area was inspected as well. The downloaded file hash remained unchanged after inspection; no editor changes were saved. This is WordCraft visual acceptance of the one-page staging sample, not Microsoft Word compatibility certification or a canonical LibreOffice render.
 
 A separate 45-row synthetic DOCX was generated locally through the backend's existing renderer, without writing any program records. Its attempted visual inspection was not completed because the viewer's file-dialog input was unreliable. Multi-page/wrapped-row acceptance therefore remains open, as do controlled cold-start/load performance qualification and physical-device push delivery. The device permission question was presented separately; no notification permission was granted or test push sent during this pass. No runtime code was changed, and no new full regression run is claimed.
+
+## Physical Windows push acceptance — 25 October 2026
+
+The user approved Chrome notification permission on this Windows PC and confirmed that the real alert arrived and clicking it opened the QA report. One marked Sponsor discussion comment on the existing synthetic Coordinator report created the notification and queued push; scheduler run 40217193779 completed successfully and acknowledged the tick with HTTP 200. The visible alert used the privacy-safe title “iLead update” and body “Open iLead to view your update.” No report version or change request was created by this comment.
+
+Cleanup passed through the deployed UI and independent authenticated staging API reads:
+
+| Step                    | Observed result                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Disable this device     | UI showed Not enabled and no registered devices; server returned zero bindings.                                          |
+| Explicitly enable again | UI showed Enabled and the named staging Windows device; server returned one binding.                                     |
+| Log out while enabled   | Browser returned to login; server returned zero bindings.                                                                |
+| Fresh Coordinator login | UI still showed Not enabled and no registered devices; server returned zero bindings. No silent resubscription occurred. |
+
+The test finished with the synthetic account signed out and its device registration removed. Chrome's site permission may remain granted; this is distinct from an active push subscription. The test comment and notification remain as QA history. Secret-free DOM/screenshots and state metadata are retained in ignored artifacts. Delivery and click-through are user-confirmed; registration/cleanup are automation-observed. This qualifies Windows Chrome only, not Android or iOS, and does not establish a specific push-provider response code. No runtime code changed and no additional full regression suite was run. Multi-page document visual acceptance and controlled cold-start/load qualification remain open.
+
+## Clear account labels and five-page report qualification — 25 October 2026
+
+PR 47 is merged at main commit `8b53c2d`. The later Windows push evidence is carried forward in this branch rather than rewriting the already merged PR.
+
+The frontend source audit found a raw recovery-request UUID, internal delivery error codes, uppercase recovery states and raw section-kind enums in visible copy. Recovery details now identify the account by name and request time, with actionable delivery guidance. Recovery states and section kinds have readable labels; the section library and report builder share the same kind mapping. Internal keys, route parameters and authorization comparisons remain unchanged. Meaningful dates, lesson numbers, counts and report versions remain visible. This audit covers application-generated presentation; it does not rewrite user-authored names or synthetic QA history.
+
+With the owner's explicit override, the existing installed LibreOffice rendered the local 45-row synthetic DOCX using the packaged renderer and a temporary profile. Five page images were inspected individually. Rows 1–7, 8–19, 20–31, 32–43 and 44–45 flowed across pages, with repeated column headings, readable wrapped lesson names, no clipped or split rows and the final checkpoint following the table. No original document or database record was edited. Evidence is under ignored `artifacts/pagination-render/`. This establishes the tested LibreOffice layout, not Microsoft Word compatibility.
+
+A controlled staging export workload ran three sequential downloads, followed by two concurrent downloads of the existing QA report through the deployed frontend:
+
+| Sample       | Headers      | Completed body | Outcome                              |
+| ------------ | ------------ | -------------- | ------------------------------------ |
+| Sequential 1 | 3.052s       | 95.131s        | HTTP 200, valid ZIP signature        |
+| Sequential 2 | 4.755s       | 87.035s        | HTTP 200, valid ZIP signature        |
+| Sequential 3 | 3.770s       | 96.435s        | HTTP 200, valid ZIP signature        |
+| Concurrent 1 | 5.508s       | 92.257s        | HTTP 200, valid ZIP signature        |
+| Concurrent 2 | Not recorded | 120s deadline  | Timeout; workload did not fully pass |
+
+A subsequent direct Render export returned headers in 2.519s and completed in 8.048s. These observations isolate a slower tested frontend transfer path, but do not prove the responsible provider or network component. No confirmed sleeping service was exercised, so provider cold-start acceptance remains open. Raw metadata is retained under ignored artifacts. The deadline is not being extended again to mask the failed concurrency result.
+
+The compression-disabled frontend export also completed slowly: 3.004s to headers and 116.737s to the full body (HTTP 200). Removing compression did not resolve the observed delay. Further provider/network investigation remains required; no export transport redesign or claim of consistent performance is included in this change.
+
+Validation of the presentation change: all 137 logic tests passed. Of 59 affected browser cases, 57 passed initially; the two narrow-theme cases had obsolete assertions requiring raw error codes. After updating those assertions, both passed, followed by three final failure/narrow-theme rechecks after the readable delivery label change. Changed-file ESLint, formatting, whitespace and TypeScript checks passed. The supported webpack production build passed; two local default Turbopack attempts failed while starting their CSS worker. Ignored QA artifacts are now excluded from TypeScript to prevent moved temporary build validators from entering application compilation. Hosted default-builder verification is still required. Light/dark 320px screenshots were inspected; no real email or account recovery action was sent by these fixture-backed tests.

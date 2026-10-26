@@ -8,6 +8,7 @@ import {
   sectionTitle,
   position,
   sectionKind,
+  sectionKindLabels,
   configurationEndpoint,
   savedConfiguration,
   readConfigurationPage,
@@ -176,7 +177,7 @@ function Editor({
       </p>
       {!isActivity && (
         <p className="break-words text-sm text-muted-foreground">
-          {item.kind} ·{" "}
+          {sectionKindLabels[item.kind]} ·{" "}
           {item.isSystem
             ? "System section — cannot be archived"
             : "Custom section"}

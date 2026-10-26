@@ -92,3 +92,11 @@ Completed live journeys now include session create/edit/save/cancel, report reop
 5. Physical-device push acceptance after frontend completion, as requested by the owner.
 
 This first pass is a shared-shell improvement, not a claim that every page is finalized or flawless. Do not count fixture tests as deployed end-to-end qualification.
+
+## Presentation audit and acceptance update — 25 October 2026
+
+Recovery details now show the account and request time instead of an opaque UUID. Delivery failures use actionable guidance instead of internal provider codes; recovery states and section kinds use readable labels. Section configuration and the report builder share the same kind labels. Internal route/key identities and meaningful dates, counts, lesson numbers and report versions are preserved.
+
+The synthetic 45-row Word fixture passed a five-page LibreOffice visual review after the owner explicitly authorized that renderer. Microsoft Word-specific compatibility remains unverified. Windows Chrome delivery, deep-link opening, explicit unsubscribe, logout cleanup and no silent registration after re-login passed; mobile devices remain outside this qualification.
+
+Controlled export testing did not fully pass: three sequential requests and one of two concurrent requests completed in about 87–96 seconds, while the other timed out at 120 seconds. A direct API request took about eight seconds; disabling compression on the frontend path still took about 117 seconds. This remains an unresolved performance acceptance item, and no provider cold-start result is claimed.

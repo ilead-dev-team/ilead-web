@@ -11,6 +11,11 @@ export const sectionTitle = configurationName.max(
 );
 export const position = z.number().int().min(0).max(100000);
 export const sectionKind = z.enum(["TEXT", "BULLETS", "TABLE"]);
+export const sectionKindLabels = {
+  TEXT: "Text",
+  BULLETS: "Bullet list",
+  TABLE: "Table",
+} satisfies Record<z.infer<typeof sectionKind>, string>;
 export const activity = z.object({
   id: z.string().min(1),
   name: configurationName,

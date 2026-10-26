@@ -119,7 +119,13 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
       {query.data?.detail && !query.isError && (
         <section aria-label="Recovery request details" className={styles.panel}>
           <h2 className="text-xl font-semibold">Request details</h2>
-          <p className="break-all text-sm">Request {query.data.detail.id}</p>
+          <p className="break-words font-semibold">
+            Password recovery for {query.data.detail.user.name}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Requested {formatPeopleTime(query.data.detail.requestedAt)} Kigali
+            time
+          </p>
           <p>
             Issued:{" "}
             {query.data.detail.issuedAt
@@ -162,7 +168,10 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
                     </p>
                   )}
                   {delivery.lastErrorCode && (
-                    <p>Error code: {delivery.lastErrorCode}</p>
+                    <p>
+                      Delivery needs attention. Check the account email settings
+                      and refresh this request before sending another link.
+                    </p>
                   )}
                 </li>
               ))}
@@ -233,9 +242,24 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
                         </Link>
                       )}
                     </td>
-                    <td className="p-3">{row.status}</td>
                     <td className="p-3">
-                      {row.deliveries[0]?.status ?? "Not issued"}
+                      {
+                        {
+                          PENDING: "Awaiting a reset link",
+                          ISSUED: "Reset link issued",
+                          RESOLVED: "Resolved",
+                        }[row.status]
+                      }
+                    </td>
+                    <td className="p-3">
+                      {row.deliveries[0]
+                        ? {
+                            PENDING: "Queued",
+                            ACCEPTED: "Accepted by email provider",
+                            FAILED: "Needs attention",
+                            CANCELLED: "Cancelled",
+                          }[row.deliveries[0].status]
+                        : "Not issued"}
                     </td>
                     <td className="p-3">
                       <Button
