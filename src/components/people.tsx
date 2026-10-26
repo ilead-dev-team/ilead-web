@@ -139,71 +139,50 @@ function PeopleList({ view }: { view: Exclude<View, "INVITATIONS"> }) {
                 : "No people in this view on this page."}
             </p>
           ) : (
-            <div
-              className={styles.tableViewport}
-              role="region"
-              aria-label="People table"
-              tabIndex={0}
-            >
-              <table className={styles.table}>
-                <caption className="p-4 text-left">
-                  {viewLabels[view]} · {query.data.meta.total} total
-                </caption>
-                <thead className="border-y border-border bg-muted">
-                  <tr>
-                    {[
-                      "Person",
-                      "Role and class",
-                      "Account",
-                      "Roundtable",
-                      "Joined (Kigali)",
-                    ].map((label) => (
-                      <th key={label} scope="col" className="p-4">
-                        {label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {query.data.data.map((person) => (
-                    <tr key={person.id} className="border-b border-border">
-                      <td className="max-w-64 break-words p-4">
-                        <p className="font-medium">{person.name}</p>
-                        <p className="break-all text-muted-foreground">
-                          {person.email}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        {roleLabels[person.role]}
-                        <p className="text-muted-foreground">
-                          {person.classYear
-                            ? `Year ${person.classYear.slice(-1)}`
-                            : "No class recorded"}
-                        </p>
-                      </td>
-                      <td className="p-4">
+            <section aria-label="People directory">
+              <h3 className="mb-5 font-semibold">
+                {viewLabels[view]} · {query.data.meta.total} total
+              </h3>
+              <ul className={styles.recordGrid}>
+                {query.data.data.map((person) => (
+                  <li key={person.id} className={styles.record}>
+                    <h4 className={styles.recordTitle}>{person.name}</h4>
+                    <p className={styles.recordMeta}>
+                      {roleLabels[person.role]}
+                      {person.classYear
+                        ? ` · Year ${person.classYear.slice(-1)}`
+                        : ""}
+                    </p>
+                    <details className={styles.personDetails}>
+                      <summary>
+                        View details
+                        <span className="sr-only"> for {person.name}</span>
+                      </summary>
+                      <p className="break-words text-muted-foreground">
+                        {person.email}
+                      </p>
+                      <p>
                         {person.status === "ACTIVE" ? "Active" : "Deactivated"}
-                        <p className="text-muted-foreground">
-                          {person.emailVerifiedAt
-                            ? "Email verified"
-                            : "Email not verified"}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        {person.role !== "FACILITATOR"
-                          ? "Not applicable"
-                          : person.hasRoundtable
+                        {" · "}
+                        {person.emailVerifiedAt
+                          ? "Email verified"
+                          : "Email not verified"}
+                      </p>
+                      {person.role === "FACILITATOR" && (
+                        <p>
+                          {person.hasRoundtable
                             ? "Registered"
                             : "Not registered"}
-                      </td>
-                      <td className="p-4">
-                        {formatPeopleTime(person.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </p>
+                      )}
+                      <p className={styles.recordMeta}>
+                        Joined {formatPeopleTime(person.createdAt)} Kigali time
+                      </p>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
           <Pagination
             page={page}

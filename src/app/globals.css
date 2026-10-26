@@ -81,6 +81,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
   --radius-lg: var(--radius);
 }
 * {
@@ -204,6 +206,7 @@ h1 {
   display: grid;
   gap: 7px;
   margin-bottom: 20px;
+  min-width: 0;
 }
 .field label {
   font-size: 13px;

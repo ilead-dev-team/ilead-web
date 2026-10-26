@@ -94,6 +94,25 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
     }
   }, [send.isSuccess, send.isPending]);
   const busy = send.isPending;
+  const resetButton = (row: RecoveryRequest) => (
+    <Button
+      aria-label={`Send reset email to ${row.user.name}`}
+      disabled={
+        busy ||
+        query.isFetching ||
+        query.data?.detail?.mailboxConnected === false ||
+        !canSendRecovery(row, query.dataUpdatedAt)
+      }
+      onClick={(event) => {
+        trigger.current = event.currentTarget;
+        send.reset();
+        setReview(row);
+        dialog.current?.showModal();
+      }}
+    >
+      Send reset email
+    </Button>
+  );
   return (
     <div className={styles.page}>
       <h1>Account recovery</h1>
@@ -121,6 +140,18 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
           <h2 className="text-xl font-semibold">Request details</h2>
           <p className="break-words font-semibold">
             Password recovery for {query.data.detail.user.name}
+          </p>
+          <p className="break-words text-sm text-muted-foreground">
+            {query.data.detail.user.email}
+          </p>
+          <p className={styles.status}>
+            {
+              {
+                PENDING: "Awaiting a reset link",
+                ISSUED: "Reset link issued",
+                RESOLVED: "Resolved",
+              }[query.data.detail.status]
+            }
           </p>
           <p className="text-sm text-muted-foreground">
             Requested {formatPeopleTime(query.data.detail.requestedAt)} Kigali
@@ -177,6 +208,9 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
               ))}
             </ol>
           )}
+          <div className={styles.recordActions}>
+            {resetButton(query.data.detail)}
+          </div>
         </section>
       )}
       {query.isError && (
@@ -194,97 +228,40 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
       )}
       {query.data &&
         !query.isError &&
+        !query.data.detail &&
         (query.data.data.length === 0 ? (
           <p className="notice">No recovery requests on this page.</p>
         ) : (
-          <div
-            role="region"
-            aria-label="Recovery requests table"
-            tabIndex={0}
-            className={styles.tableViewport}
-          >
-            <table className={styles.table}>
-              <caption className="p-3 text-left">
-                Recovery requests · {query.data.meta.total} total
-              </caption>
-              <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th scope="col" className="p-3">
-                    Account
-                  </th>
-                  <th scope="col" className="p-3">
-                    Status
-                  </th>
-                  <th scope="col" className="p-3">
-                    Delivery
-                  </th>
-                  <th scope="col" className="p-3">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {query.data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-border">
-                    <td className="max-w-xs break-words p-3">
-                      {row.user.name}
-                      <br />
-                      <span className="text-muted-foreground">
-                        {row.user.email}
-                      </span>
-                      <p className="mt-1 text-xs">
-                        Requested {formatPeopleTime(row.requestedAt)} Kigali
-                        time
-                      </p>
-                      {!requestId && (
-                        <Link href={`/people/recovery?request=${row.id}`}>
-                          View request
-                        </Link>
-                      )}
-                    </td>
-                    <td className="p-3">
+          <section aria-label="Recovery requests">
+            <h2 className="mb-5 font-semibold">
+              Recovery requests · {query.data.meta.total} total
+            </h2>
+            <ul className={styles.recoveryGrid}>
+              {query.data.data.map((row) => (
+                <li key={row.id} className={styles.recoveryItem}>
+                  <h3 className={styles.recordTitle}>{row.user.name}</h3>
+                  <p className={styles.status}>
+                    {
                       {
-                        {
-                          PENDING: "Awaiting a reset link",
-                          ISSUED: "Reset link issued",
-                          RESOLVED: "Resolved",
-                        }[row.status]
-                      }
-                    </td>
-                    <td className="p-3">
-                      {row.deliveries[0]
-                        ? {
-                            PENDING: "Queued",
-                            ACCEPTED: "Accepted by email provider",
-                            FAILED: "Needs attention",
-                            CANCELLED: "Cancelled",
-                          }[row.deliveries[0].status]
-                        : "Not issued"}
-                    </td>
-                    <td className="p-3">
-                      <Button
-                        aria-label={`Send reset email to ${row.user.name}`}
-                        disabled={
-                          busy ||
-                          query.isFetching ||
-                          query.data.detail?.mailboxConnected === false ||
-                          !canSendRecovery(row, query.dataUpdatedAt)
-                        }
-                        onClick={(event) => {
-                          trigger.current = event.currentTarget;
-                          send.reset();
-                          setReview(row);
-                          dialog.current?.showModal();
-                        }}
-                      >
-                        Send reset email
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        PENDING: "Awaiting a reset link",
+                        ISSUED: "Reset link issued",
+                        RESOLVED: "Resolved",
+                      }[row.status]
+                    }
+                  </p>
+                  <div className={styles.recordActions}>
+                    <Button asChild variant="outline">
+                      <Link href={`/people/recovery?request=${row.id}`}>
+                        View details
+                        <span className="sr-only"> for {row.user.name}</span>
+                      </Link>
+                    </Button>
+                    {resetButton(row)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
       {requestId !== null && (
         <div className="mt-5 flex flex-wrap items-center gap-3">

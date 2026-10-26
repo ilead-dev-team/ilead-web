@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import styles from "./roundtables.module.css";
+import surfaces from "./screen-surfaces.module.css";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -366,12 +367,12 @@ export function Issues() {
           {query.data.data.length === 0 && (
             <p className="notice">No issues match this filter.</p>
           )}
-          <div className="grid gap-4">
+          <div className={surfaces.issueGrid}>
             {query.data.data.map((issue) => (
               <article
                 key={issue.id}
                 aria-labelledby={`issue-${issue.id}`}
-                className="min-w-0 rounded-xl border border-border bg-card p-6"
+                className={surfaces.issue}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <h2

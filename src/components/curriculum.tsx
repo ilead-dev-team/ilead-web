@@ -113,7 +113,7 @@ function LessonEditor({
   return (
     <form
       aria-label={`Edit ${levelLabel} lesson ${item.number}`}
-      className={styles.panel}
+      className={styles.lesson}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -260,20 +260,22 @@ export function Curriculum() {
       )}
       {query.data && (
         <>
-          <Field id="curriculum-level" label="Level">
-            <Select
-              id="curriculum-level"
-              value={selected}
-              disabled={writes > 0 || query.isFetching || views.isPending}
-              onChange={(event) => setSelected(event.target.value)}
-            >
-              {query.data.data.levels.map((level) => (
-                <option key={level.key} value={level.key}>
-                  {level.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <div className={styles.filter}>
+            <Field id="curriculum-level" label="Level">
+              <Select
+                id="curriculum-level"
+                value={selected}
+                disabled={writes > 0 || query.isFetching || views.isPending}
+                onChange={(event) => setSelected(event.target.value)}
+              >
+                {query.data.data.levels.map((level) => (
+                  <option key={level.key} value={level.key}>
+                    {level.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
           {query.data.data.levels.map((level) => (
             <div key={level.key} hidden={selected !== level.key}>
               <section
