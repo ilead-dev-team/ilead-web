@@ -168,7 +168,9 @@ test("recovery notification opens exact request and refreshes after reviewed sen
   expect(calls.filter((c) => c.path.endsWith("/send-reset"))).toHaveLength(1);
   expect(calls.some((c) => c.path === "/account-recovery")).toBe(false);
   await page.getByRole("link", { name: "Back to recovery queue" }).click();
-  await expect(page.getByRole("link", { name: "View request" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "View details for Invitee" }),
+  ).toBeVisible();
 });
 
 test("recovery rejects invalid notification identifiers without requesting recovery data", async ({
@@ -223,10 +225,12 @@ test("recovery delivery failure uses readable guidance instead of internal codes
   await expect(details).not.toContainText("MAIL_CREDENTIALS_INVALID");
   await expect(details).not.toContainText(recovery.id);
   await expect(
-    page.getByRole("cell", { name: "Needs attention", exact: true }),
+    details.getByText(
+      "Delivery needs attention. Check the account email settings and refresh this request before sending another link.",
+    ),
   ).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Awaiting a reset link", exact: true }),
+    details.getByText("Awaiting a reset link", { exact: true }),
   ).toBeVisible();
 });
 

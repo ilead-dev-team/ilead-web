@@ -1,5 +1,9 @@
 # Word download performance investigation
 
+For the post-merge cold-start sample, measured deadlines, provider startup
+correlation and remaining release gate, see
+[release performance acceptance](release-performance-acceptance.md).
+
 ## Findings — 25 October 2026
 
 The 1.2 MB synthetic staging report took 76.619s through Vercel using Node and 73.162s using curl HTTP/1.1; a direct Render request took 7.321s. Headers arrived in 3.616/8.196/2.540s respectively. The Vercel response continued transferring slowly after headers, rather than spending the whole time generating the report. Five local renders of the larger 45-row document took 189–293ms. A public font was also slow through Vercel. Disabling compression did not fix it.

@@ -18,6 +18,7 @@ export default defineConfig({
     "entries.spec.ts",
     "calendar.spec.ts",
     "academic-management.spec.ts",
+    "release-layout.spec.ts",
     "reports.spec.ts",
     "report-feedback.spec.ts",
     "report-library.spec.ts",

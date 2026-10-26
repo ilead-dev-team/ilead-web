@@ -114,7 +114,7 @@ test("people role views, search, pagination and unregistered selection use exact
   });
   await page.goto("/people");
   await expect(
-    page.getByRole("cell", { name: "Ada Example ada@example.test" }),
+    page.getByRole("heading", { name: "Ada Example", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Next page", exact: true }).click();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
@@ -492,7 +492,7 @@ test("people and invitation review support contained mobile tables, keyboard foc
   await setup(page);
   await page.goto("/people");
   await expect(
-    page.getByRole("region", { name: "People table" }),
+    page.getByRole("region", { name: "People directory" }),
   ).toBeVisible();
   await expect(
     page
@@ -559,7 +559,7 @@ test("people and invitation review support contained mobile tables, keyboard foc
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("button", { name: "Facilitators", exact: true }).click();
   await expect(
-    page.getByRole("region", { name: "People table" }),
+    page.getByRole("region", { name: "People directory" }),
   ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("people-desktop-light.png"),

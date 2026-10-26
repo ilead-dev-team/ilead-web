@@ -132,6 +132,10 @@
   padding: 30px 32px;
   align-self: start;
 }
+.layout > .content {
+  /* The standalone workspace's auto margins must not vertically center short pages. */
+  margin: 0 auto;
+}
 .menuButton {
   display: none;
 }

@@ -37,20 +37,28 @@ type Action =
       patch: CalendarPatch;
     }
   | { kind: "current"; original: ManagedYear };
-function CalendarSummary({ year }: { year: CalendarInput }) {
+function CalendarSummary({
+  year,
+  showTitle = true,
+}: {
+  year: CalendarInput;
+  showTitle?: boolean;
+}) {
   return (
-    <div className="my-4 grid min-w-0 gap-2 [overflow-wrap:anywhere]">
-      <p className="font-semibold">{year.label}</p>
-      <p>
+    <div className={styles.calendarSummary}>
+      {showTitle && <p className="font-semibold">{year.label}</p>}
+      <p className={styles.recordMeta}>
         {year.startsOn} to {year.endsOn}
       </p>
-      <ul className="grid gap-2">
+      <ul className={styles.termsGrid}>
         {[...year.terms]
           .sort((a, b) => a.number - b.number)
           .map((t) => (
             <li key={t.number}>
               <span className="font-semibold">
-                Term {t.number}: {t.name}
+                {t.name === `Term ${t.number}`
+                  ? t.name
+                  : `Term ${t.number}: ${t.name}`}
               </span>
               <p>
                 {t.startsOn} to {t.endsOn}
@@ -296,52 +304,56 @@ export function AcademicYears() {
       </header>
       <section
         aria-labelledby="current-calendar-title"
-        className={styles.panel}
+        className={styles.calendarOverview}
       >
-        <h2 id="current-calendar-title" className="font-semibold">
-          Current academic year
-        </h2>
-        <Pending active={current.isFetching} />
-        {current.isError ? (
-          <>
-            <Feedback error={current.error} />
-            <Button variant="outline" onClick={() => current.refetch()}>
-              Retry current year
-            </Button>
-          </>
-        ) : current.data === null ? (
-          <p>
-            No current academic year is configured. Add a year, then choose Set
-            current year.
-          </p>
-        ) : current.data ? (
-          <p>
-            {current.data.label} · {current.data.startsOn} to{" "}
-            {current.data.endsOn}
-          </p>
-        ) : null}
+        <div>
+          <h2 id="current-calendar-title" className="font-semibold">
+            Current academic year
+          </h2>
+          <Pending active={current.isFetching} />
+          {current.isError ? (
+            <>
+              <Feedback error={current.error} />
+              <Button variant="outline" onClick={() => current.refetch()}>
+                Retry current year
+              </Button>
+            </>
+          ) : current.data === null ? (
+            <p>
+              No current academic year is configured. Add a year, then choose
+              Set current year.
+            </p>
+          ) : current.data ? (
+            <>
+              <strong>{current.data.label}</strong>
+              <p className={styles.recordMeta}>
+                {current.data.startsOn} to {current.data.endsOn}
+              </p>
+            </>
+          ) : null}
+        </div>
+        <div className={styles.recordActions}>
+          <Button
+            ref={addButton}
+            disabled={frozen || !!editor || unconfirmed}
+            onClick={() => {
+              setEditor({ original: null, draft: blankCalendar() });
+              setErrors({});
+              setNotice("");
+              mutation.reset();
+            }}
+          >
+            Add academic year
+          </Button>
+          <Button
+            variant="outline"
+            disabled={pending || years.isFetching || current.isFetching}
+            onClick={refresh}
+          >
+            Refresh years
+          </Button>
+        </div>
       </section>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          ref={addButton}
-          disabled={frozen || !!editor || unconfirmed}
-          onClick={() => {
-            setEditor({ original: null, draft: blankCalendar() });
-            setErrors({});
-            setNotice("");
-            mutation.reset();
-          }}
-        >
-          Add academic year
-        </Button>
-        <Button
-          variant="outline"
-          disabled={pending || years.isFetching || current.isFetching}
-          onClick={refresh}
-        >
-          Refresh years
-        </Button>
-      </div>
       {notice && (
         <p role="status" className="notice">
           {notice}
@@ -430,44 +442,45 @@ export function AcademicYears() {
                   "date",
                 )}
               </div>
-              {editor.draft.terms.map((t, index) => (
-                <fieldset
-                  key={t.number}
-                  className="mt-4 min-w-0 rounded-lg border border-border p-4"
-                >
-                  <legend className="px-2 font-semibold">
-                    Term {t.number}
-                  </legend>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {(
-                      [
-                        ["name", "name", "text"],
-                        ["startsOn", "start date", "date"],
-                        ["endsOn", "end date", "date"],
-                      ] as const
-                    ).map(([key, label, type]) => (
-                      <div key={key}>
-                        {input(
-                          `terms.${index}.${key}`,
-                          `Term ${t.number} ${label}`,
-                          t[key],
-                          (value) =>
-                            setEditor({
-                              ...editor,
-                              draft: {
-                                ...editor.draft,
-                                terms: editor.draft.terms.map((row, i) =>
-                                  i === index ? { ...row, [key]: value } : row,
-                                ),
-                              },
-                            }),
-                          type,
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-              ))}
+              <div className={styles.termEditors}>
+                {editor.draft.terms.map((t, index) => (
+                  <fieldset key={t.number} className={styles.termEditor}>
+                    <legend className="px-2 font-semibold">
+                      Term {t.number}
+                    </legend>
+                    <div>
+                      {(
+                        [
+                          ["name", "name", "text"],
+                          ["startsOn", "start date", "date"],
+                          ["endsOn", "end date", "date"],
+                        ] as const
+                      ).map(([key, label, type]) => (
+                        <div key={key}>
+                          {input(
+                            `terms.${index}.${key}`,
+                            `Term ${t.number} ${label}`,
+                            t[key],
+                            (value) =>
+                              setEditor({
+                                ...editor,
+                                draft: {
+                                  ...editor.draft,
+                                  terms: editor.draft.terms.map((row, i) =>
+                                    i === index
+                                      ? { ...row, [key]: value }
+                                      : row,
+                                  ),
+                                },
+                              }),
+                            type,
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Button type="submit" disabled={unconfirmed}>
                   Review changes
@@ -525,18 +538,21 @@ export function AcademicYears() {
         {years.data && !years.isError && (
           <>
             {years.data.data.length ? (
-              <ul className="grid gap-4 lg:grid-cols-2">
+              <ul className={styles.yearGrid}>
                 {years.data.data.map((year) => (
                   <li key={year.id}>
                     <article
                       aria-label={`Academic year ${year.label}`}
-                      className={styles.panel}
+                      className={styles.record}
                     >
                       <h2 className="text-lg font-semibold">{year.label}</h2>
-                      <p className="text-sm">
+                      <p className={styles.status}>
                         {year.isCurrent ? "Current year" : "Not current"}
                       </p>
-                      <CalendarSummary year={calendarDraft(year)} />
+                      <CalendarSummary
+                        year={calendarDraft(year)}
+                        showTitle={false}
+                      />
                       <div className="flex flex-wrap gap-3">
                         <Button
                           variant="outline"

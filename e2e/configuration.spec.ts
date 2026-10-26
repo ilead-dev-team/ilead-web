@@ -39,6 +39,13 @@ const section: Section = {
   isArchived: false,
   position: 0,
 };
+async function openEditors(page: Page) {
+  const buttons = page.getByRole("button", {
+    name: /^Edit (activity|section) /,
+  });
+  await expect(buttons.first()).toBeVisible();
+  while (await buttons.count()) await buttons.first().click();
+}
 test("Coordinator maintains activities, retains failed edits and resets paging on filter", async ({
   page,
 }) => {
@@ -88,6 +95,7 @@ test("Coordinator maintains activities, retains failed edits and resets paging o
     });
   });
   await page.goto("/settings/activities");
+  await openEditors(page);
   await page.getByLabel("Activity name", { exact: true }).fill("Discussion");
   await page.getByLabel("Position", { exact: true }).fill("3");
   await page.getByRole("checkbox", { name: "Active", exact: true }).uncheck();
@@ -176,6 +184,7 @@ test("section library protects system sections and creates, archives and restore
     return r.fulfill({ json: { data: custom } });
   });
   await page.goto("/settings/sections");
+  await openEditors(page);
   await expect(
     page.getByRole("form", { name: "Edit Progress" }).getByRole("checkbox"),
   ).toHaveCount(0);
@@ -186,6 +195,9 @@ test("section library protects system sections and creates, archives and restore
   await expect(page.getByLabel("New section title")).toHaveValue("Highlights");
   fail = false;
   await page.getByRole("button", { name: "Add", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Edit section Highlights", exact: true })
+    .click();
   const form = page.getByRole("form", { name: "Edit Highlights" });
   await form.getByRole("checkbox").uncheck();
   await form.getByRole("button", { name: "Save", exact: true }).click();
@@ -301,6 +313,7 @@ for (const scenario of modes) {
       return route.fulfill({ status: 503, json: {} });
     });
     await page.goto(`/settings/${mode}`);
+    await openEditors(page);
     const form = page.getByRole("form", {
       name: `Edit ${"name" in row ? row.name : row.title}`,
       exact: true,
@@ -390,6 +403,7 @@ for (const scenario of modes) {
       return route.fulfill({ status: 502, json: {} });
     });
     await page.goto(`/settings/${mode}`);
+    await openEditors(page);
     const form = page.getByRole("form", { name: "Add configuration" });
     await form.getByLabel(addField).fill("New addition");
     if (mode === "sections")
@@ -437,6 +451,7 @@ for (const scenario of modes) {
       }),
     );
     await page.goto(`/settings/${mode}`);
+    await openEditors(page);
     const form = page.getByRole("form", {
       name: `Edit ${"name" in scenario.row ? scenario.row.name : scenario.row.title}`,
       exact: true,
@@ -465,6 +480,7 @@ for (const scenario of modes) {
       return route.fulfill({ json: { data: row } });
     });
     await page.goto(`/settings/${mode}`);
+    await openEditors(page);
     const form = page.getByRole("form", {
       name: `Edit ${"name" in row ? row.name : row.title}`,
       exact: true,
@@ -502,6 +518,7 @@ for (const scenario of modes) {
         : { ...scenario.row, title: "S".repeat(120) };
     await records(page, mode, () => ({ rows: [row] }));
     await page.goto(`/settings/${mode}`);
+    await openEditors(page);
     const input = page.getByLabel(field, { exact: true });
     await input.fill(" ");
     await input.press("Enter");
@@ -555,6 +572,7 @@ test("pending edits reject duplicate submits and block other records, creation a
     return route.fulfill({ json: { data: row } });
   });
   await page.goto("/settings/activities");
+  await openEditors(page);
   const form = page.getByRole("form", { name: "Edit Reflection", exact: true });
   await form.getByLabel("Activity name", { exact: true }).fill("Edited");
   try {
@@ -593,6 +611,7 @@ test("failed later pages allow returning to a readable page without enabling sta
       : route.fallback(),
   );
   await page.goto("/settings/activities");
+  await openEditors(page);
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Try again", exact: true }),
@@ -602,6 +621,9 @@ test("failed later pages allow returning to a readable page without enabling sta
   ).toBeDisabled();
   await page.getByRole("button", { name: "Previous", exact: true }).click();
   await expect(page.getByText("Page 1 of 2", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Edit activity Activity 0", exact: true })
+    .click();
   await expect(
     page
       .getByRole("form", { name: "Edit Activity 0", exact: true })
