@@ -58,6 +58,9 @@ const base = {
   ],
 };
 async function auth(page: Page, role = "COORDINATOR") {
+  await page.route("**/api/v1/notifications/unread-count", (r) =>
+    r.fulfill({ json: { data: { count: 0 } } }),
+  );
   await page.route("**/api/download-config", (r) =>
     r.fulfill({ json: { origin: "https://downloads.example.test" } }),
   );

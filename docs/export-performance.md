@@ -24,6 +24,8 @@ The temporary Vercel Automation Bypass was removed after the failed preview expe
 
 ## Rollout gate
 
+The original PR49 CI run exhausted its 15-minute job budget: Ubuntu system-dependency downloads alone took 9m31s (24.9 MB at 43.7 kB/s). Browser tests consequently received less than five minutes. CI now runs quality checks and the complete browser suite in separate jobs. Browser dependency installation has a 15-minute limit and tests have a separate 12-minute limit within a 30-minute job. The existing required `verify` gate succeeds only if both jobs succeed; failures, cancellation and skipped jobs cannot satisfy it. Browser traces are uploaded on failure or cancellation. Report-history fixtures explicitly provide the unrelated notification badge count rather than attempting an absent local backend.
+
 Deploy the companion backend first, then merge/deploy this web change. Existing backend `WEB_ORIGIN` and access-token secret and existing web `API_ORIGIN` are reused; no manual credential setup is needed. Keep the previous Word endpoints for compatibility. A preview page on another origin is intentionally not allowed by staging CORS.
 
 After deployment, verify real ticket issuance, browser CORS, current and historical file integrity, expiry/retry, logout/role denial and repeated/concurrent timing. Neither the old direct-Render baseline nor fixture tests certify the new deployed ticket flow. Keep performance acceptance open until that deployed check passes. No guaranteed latency or cold-start result is claimed.
