@@ -279,11 +279,11 @@ export function PushDevices() {
       {devices.data &&
         !devices.isError &&
         (devices.data.length ? (
-          <ul className="mt-4 grid gap-3">
+          <ul className="compact-records mt-4">
             {devices.data.map((row) => (
               <li
                 key={row.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
               >
                 <div>
                   <span>{row.deviceLabel ?? "Unnamed browser"}</span>

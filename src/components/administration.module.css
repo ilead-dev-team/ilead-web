@@ -1,8 +1,5 @@
 .page {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  composes: page from "./workspace-surfaces.module.css";
 }
 .section {
   display: grid;
@@ -10,11 +7,7 @@
   min-width: 0;
 }
 .panel {
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  min-width: 0;
+  composes: panel from "./workspace-surfaces.module.css";
 }
 .panel > h2 {
   margin-bottom: 12px;
@@ -30,10 +23,18 @@
   flex-wrap: wrap;
   align-items: end;
   gap: 16px;
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  max-width: 720px;
+}
+.search :global(.field) {
+  margin-bottom: 0;
+  flex: 1 1 220px;
+}
+.search > button {
+  margin-bottom: 0;
+}
+.panel > button,
+.page > button {
+  justify-self: start;
 }
 .views {
   display: flex;
@@ -59,12 +60,7 @@
   background: var(--muted);
 }
 .tableViewport {
-  min-width: 0;
-  max-width: 100%;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  composes: tableViewport from "./workspace-surfaces.module.css";
 }
 .table {
   width: 100%;
@@ -298,8 +294,7 @@
   .termsGrid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .panel,
-  .search {
+  .panel {
     padding: 16px;
   }
   .views button {

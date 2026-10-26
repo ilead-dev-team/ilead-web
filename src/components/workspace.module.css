@@ -57,6 +57,14 @@
 .accountTrigger::-webkit-details-marker {
   display: none;
 }
+.chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.account[open] .chevron {
+  transform: rotate(180deg);
+}
 .accountPanel {
   position: absolute;
   top: calc(100% + 12px);

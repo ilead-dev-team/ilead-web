@@ -461,7 +461,7 @@ export function RoundtableDetail({
                       .slice(0, showAllLessons ? undefined : 3)
                       .map((item) => (
                         <li
-                          className="rounded-lg border border-border p-3"
+                          className="border-b border-border pb-3"
                           key={item.lessonId}
                         >
                           {item.number}. {item.title} ·{" "}

@@ -1,19 +1,15 @@
 .page {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  composes: page from "./workspace-surfaces.module.css";
 }
 .panel {
-  min-width: 0;
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  overflow-wrap: anywhere;
+  composes: panel from "./workspace-surfaces.module.css";
 }
 .panel > p + p {
   margin-top: 12px;
+}
+.panel > button,
+.page > button {
+  justify-self: start;
 }
 .narrow {
   width: 100%;

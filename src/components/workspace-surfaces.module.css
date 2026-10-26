@@ -1,0 +1,56 @@
+.page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  align-content: start;
+  overflow-wrap: anywhere;
+}
+.page > h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+}
+.page > h1 + p {
+  max-width: 76ch;
+  margin: 0 0 4px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+.panel > h2 {
+  margin-bottom: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.panel > button,
+.page > button {
+  justify-self: start;
+}
+.tableViewport {
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+@media (max-width: 640px) {
+  .page {
+    gap: 18px;
+  }
+  .page > h1 {
+    font-size: 26px;
+  }
+  .panel {
+    padding: 16px;
+  }
+}

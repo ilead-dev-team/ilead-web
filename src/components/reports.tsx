@@ -137,67 +137,69 @@ export function Reports() {
           ? "Read the latest sent report snapshots. Work in progress stays private."
           : "Create reports from held sessions. Only the author can edit and deliver them."}
       </p>
-      <form
-        className={styles.search}
-        onSubmit={(event) => {
-          event.preventDefault();
-          setQ(search.trim());
-          setPage(1);
-        }}
-      >
-        <div className="min-w-0 flex-1">
-          <Field
-            id="report-search"
-            label={
-              user.role === "SPONSOR"
-                ? "Search sent reports"
-                : "Search academic year"
-            }
-          >
-            <Input
-              id="report-search"
-              value={search}
-              maxLength={100}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </Field>
-        </div>
-        <Button>Search reports</Button>
-      </form>
-      <Field id="report-status" label="Report status">
-        <Select
-          id="report-status"
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value);
+      <div className={styles.toolbar}>
+        <form
+          className={styles.search}
+          onSubmit={(event) => {
+            event.preventDefault();
+            setQ(search.trim());
             setPage(1);
           }}
         >
-          <option value="">All permitted reports</option>
-          {Object.entries(reportLabels)
-            .filter(
-              ([key]) =>
-                user.role !== "SPONSOR" ||
-                ["SENT", "CHANGES_REQUESTED"].includes(key),
-            )
-            .map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-        </Select>
-      </Field>
-      <label className="my-4 flex min-h-11 items-center gap-3">
-        <input
-          type="checkbox"
-          checked={archived}
-          onChange={(event) => {
-            setArchived(event.target.checked);
-            setPage(1);
-          }}
-        />
-        Archived reports
-      </label>
+          <div className="min-w-0 flex-1">
+            <Field
+              id="report-search"
+              label={
+                user.role === "SPONSOR"
+                  ? "Search sent reports"
+                  : "Search academic year"
+              }
+            >
+              <Input
+                id="report-search"
+                value={search}
+                maxLength={100}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </Field>
+          </div>
+          <Button>Search reports</Button>
+        </form>
+        <Field id="report-status" label="Report status">
+          <Select
+            id="report-status"
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All permitted reports</option>
+            {Object.entries(reportLabels)
+              .filter(
+                ([key]) =>
+                  user.role !== "SPONSOR" ||
+                  ["SENT", "CHANGES_REQUESTED"].includes(key),
+              )
+              .map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+          </Select>
+        </Field>
+        <label className="my-4 flex min-h-11 items-center gap-3">
+          <input
+            type="checkbox"
+            checked={archived}
+            onChange={(event) => {
+              setArchived(event.target.checked);
+              setPage(1);
+            }}
+          />
+          Archived reports
+        </label>
+      </div>
       <Pending active={query.isPending} />
       <Feedback error={query.error} />
       {query.isError && (
