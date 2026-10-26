@@ -345,6 +345,7 @@ export function RoundtableDetail({
     target = own ? user.roundtableId : id;
   const views = useRoundtableViews();
   const [level, setLevel] = useState("ICHOOSE");
+  const [showAllLessons, setShowAllLessons] = useState(false);
   const details = useQuery({
     queryKey: ["roundtables", "detail", user.id, user.role, target],
     enabled: !!target,
@@ -364,6 +365,8 @@ export function RoundtableDetail({
       progressResponse.parse(await api(`/roundtables/${target}/progress`)),
   });
   const row = details.data?.data;
+  const completedLessons =
+    progress.data?.data.completed.filter((item) => item.level === level) ?? [];
   return (
     <section className={own ? styles.ownPage : styles.page}>
       <h1>{own ? "My roundtable" : "Roundtable details"}</h1>
@@ -432,7 +435,10 @@ export function RoundtableDetail({
                 <Select
                   id="history-level"
                   value={level}
-                  onChange={(e) => setLevel(e.target.value)}
+                  onChange={(e) => {
+                    setLevel(e.target.value);
+                    setShowAllLessons(false);
+                  }}
                 >
                   {Object.entries(levelLabels).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -449,12 +455,10 @@ export function RoundtableDetail({
                 </Button>
               )}
               {progress.data && (
-                <ul className="my-4 grid gap-3">
-                  {progress.data.data.completed.filter(
-                    (item) => item.level === level,
-                  ).length ? (
-                    progress.data.data.completed
-                      .filter((item) => item.level === level)
+                <ul id="completed-lessons-list" className="my-4 grid gap-3">
+                  {completedLessons.length ? (
+                    completedLessons
+                      .slice(0, showAllLessons ? undefined : 3)
                       .map((item) => (
                         <li
                           className="rounded-lg border border-border p-3"
@@ -472,6 +476,18 @@ export function RoundtableDetail({
                     <li>No completed lessons at this level.</li>
                   )}
                 </ul>
+              )}
+              {progress.data && completedLessons.length > 3 && (
+                <Button
+                  variant="ghost"
+                  aria-expanded={showAllLessons}
+                  aria-controls="completed-lessons-list"
+                  onClick={() => setShowAllLessons((expanded) => !expanded)}
+                >
+                  {showAllLessons
+                    ? "View less"
+                    : `View more (${completedLessons.length - 3} more)`}
+                </Button>
               )}
             </section>
             <section className={styles.panel}>
