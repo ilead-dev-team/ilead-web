@@ -133,31 +133,29 @@ function LessonEditor({
         mutation.mutate(result.data);
       }}
     >
-      <p className="mb-3 break-words text-sm text-muted-foreground">
+      <Field id={id} label={`Lesson ${item.number} title`} error={invalid}>
+        <div className={styles.lessonControls}>
+          <Input
+            ref={input}
+            id={id}
+            value={title}
+            maxLength={200}
+            disabled={blocked || uncertain || checking}
+            aria-invalid={!!invalid}
+            aria-describedby={invalid ? `${id}-error` : undefined}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              setSaved(false);
+            }}
+          />
+          <Button disabled={blocked || uncertain || checking} type="submit">
+            {mutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </Field>
+      <p className="mt-3 break-words text-sm text-muted-foreground">
         Last loaded title: {item.title}
       </p>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-0 flex-1">
-          <Field id={id} label={`Lesson ${item.number} title`} error={invalid}>
-            <Input
-              ref={input}
-              id={id}
-              value={title}
-              maxLength={200}
-              disabled={blocked || uncertain || checking}
-              aria-invalid={!!invalid}
-              aria-describedby={invalid ? `${id}-error` : undefined}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                setSaved(false);
-              }}
-            />
-          </Field>
-        </div>
-        <Button disabled={blocked || uncertain || checking} type="submit">
-          {mutation.isPending ? "Saving…" : "Save"}
-        </Button>
-      </div>
       <Feedback error={mutation.error} />
       <Pending active={mutation.isPending || checking} />
       {uncertain && (

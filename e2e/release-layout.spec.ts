@@ -196,6 +196,15 @@ for (const surface of [
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
+        if (surface.name === "curriculum") {
+          const editor = page.getByRole("form", { name: /^Edit / }).first();
+          const input = (await editor.getByRole("textbox").boundingBox())!;
+          const save = (await editor
+            .getByRole("button", { name: "Save", exact: true })
+            .boundingBox())!;
+          expect(Math.abs(input.y - save.y)).toBeLessThan(2);
+          expect(Math.abs(input.height - save.height)).toBeLessThan(2);
+        }
         if (
           width === 1440 &&
           ["activities", "sections", "curriculum"].includes(surface.name)
