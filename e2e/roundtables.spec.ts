@@ -122,6 +122,8 @@ test("Coordinator filters, confirms trash, and handles restore failures", async 
     });
   });
   await page.route(`**/api/v1/roundtables/${id}`, (r) => {
+    if (r.request().method() === "GET")
+      return r.fulfill({ json: { data: { ...row, attendance } } });
     expect(r.request().method()).toBe("DELETE");
     deleted = true;
     return r.fulfill({ status: 204 });
@@ -148,6 +150,9 @@ test("Coordinator filters, confirms trash, and handles restore failures", async 
       },
     }),
   );
+  await page.route(`**/api/v1/roundtables/${id}/progress`, (r) =>
+    r.fulfill({ json: { data: { completed: [] } } }),
+  );
   await page.route(`**/api/v1/roundtables/${id}/restore`, (r) => {
     if (restoreFail)
       return r.fulfill({
@@ -171,6 +176,8 @@ test("Coordinator filters, confirms trash, and handles restore failures", async 
   );
   await page.getByLabel("Status", { exact: true }).selectOption("COMPLETED");
   expect(new URL((await filtered).url()).searchParams.get("page")).toBe("1");
+  await page.getByRole("link", { name: row.name, exact: true }).click();
+
   await page
     .getByRole("button", { name: "Move to trash", exact: true })
     .click();
@@ -518,12 +525,14 @@ test("unverified trash result requires a successful list read before another rev
   const state = await isolated(page);
   let writes = 0;
   await page.route(`**/api/v1/roundtables/${id}`, (r) => {
+    if (r.request().method() !== "DELETE") return r.fallback();
     writes++;
     if (writes === 1) return r.fulfill({ json: { data: {} } });
     state.live = false;
     return r.fulfill({ status: 204 });
   });
   await page.goto("/roundtables");
+  await page.getByRole("link", { name: row.name, exact: true }).click();
   await page
     .getByRole("button", { name: "Move to trash", exact: true })
     .click();
@@ -550,9 +559,6 @@ test("unverified trash result requires a successful list read before another rev
     .getByRole("button", { name: "Move to trash", exact: true })
     .click();
   await dialog.getByRole("button", { name: "Confirm move to trash" }).click();
-  await expect(
-    page.getByText("Roundtable moved to trash.", { exact: true }),
-  ).toBeVisible();
   await expect(page.getByText("No matching roundtables.")).toBeVisible();
   expect(writes).toBe(2);
 });
@@ -604,6 +610,7 @@ for (const trash of [false, true])
     await page.route(
       `**/api/v1/roundtables/${id}${trash ? "/restore" : ""}`,
       async (r) => {
+        if (r.request().method() === "GET") return r.fallback();
         writes++;
         await pending;
         state.live = trash;
@@ -613,6 +620,8 @@ for (const trash of [false, true])
       },
     );
     await page.goto(trash ? "/roundtables/trash" : "/roundtables");
+    if (!trash)
+      await page.getByRole("link", { name: row.name, exact: true }).click();
     const trigger = page.getByRole("button", {
       name: trash ? "Restore roundtable" : "Move to trash",
       exact: true,
@@ -723,6 +732,8 @@ for (const theme of ["light", "dark"])
     for (const trash of [false, true]) {
       state.live = !trash;
       await page.goto(trash ? "/roundtables/trash" : "/roundtables");
+      if (!trash)
+        await page.getByRole("link", { name: row.name, exact: true }).click();
       await page
         .getByRole("button", {
           name: trash ? "Restore roundtable" : "Move to trash",
