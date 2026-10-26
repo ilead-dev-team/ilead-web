@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Report } from "@/lib/reports";
-import { parseVersion, validateDocx, versionPage } from "@/lib/report-history";
+import { parseVersion, versionPage } from "@/lib/report-history";
+import { downloadReportWord } from "@/lib/report-download";
 import { useSession } from "./session";
 import { Button } from "./ui/button";
 import { Feedback, Pending } from "./account/feedback";
@@ -68,20 +69,10 @@ export function ReportHistory({
         number === null ? report.session.date : version.data!.session.date;
       const controller = new AbortController();
       activeDownload.current = controller;
-      let type: string | null = null;
-      const path =
-        number === null
-          ? `/reports/${report.id}/export/docx`
-          : `/reports/${report.id}/versions/${number}/export/docx`;
-      const blob = await validateDocx(
-        await api<Blob>(path, {
-          responseType: "blob",
-          signal: controller.signal,
-          onResponse: (response) => {
-            type = response.headers.get("content-type");
-          },
-        }),
-        type,
+      const blob = await downloadReportWord(
+        report.id,
+        number,
+        controller.signal,
       );
       if (controller.signal.aborted) throw new Error("Download cancelled");
       return { blob, number, controller, date };

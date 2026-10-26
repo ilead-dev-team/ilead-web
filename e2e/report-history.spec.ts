@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Route } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 const id = "11111111-1111-4111-8111-111111111111",
   sessionId = "22222222-2222-4222-8222-222222222222",
@@ -58,6 +58,23 @@ const base = {
   ],
 };
 async function auth(page: Page, role = "COORDINATOR") {
+  await page.route("**/api/v1/notifications/unread-count", (r) =>
+    r.fulfill({ json: { data: { count: 0 } } }),
+  );
+  await page.route("**/api/download-config", (r) =>
+    r.fulfill({ json: { origin: "https://downloads.example.test" } }),
+  );
+  await page.route(`**/api/v1/reports/${id}/export-ticket`, (r) => {
+    const version = r.request().postDataJSON().version;
+    return r.fulfill({
+      json: {
+        data: {
+          token: version ? `test-version-${version}` : "test-current",
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+        },
+      },
+    });
+  });
   await page.route("**/api/v1/auth/me", (r) =>
     r.fulfill({
       json: {
@@ -214,7 +231,7 @@ test("pending Word transfers explain the wait, block duplicates and offer an exp
     release = resolve;
   });
   let attempts = 0;
-  const path = `**/api/v1/reports/${id}/export/docx`;
+  const path = "https://downloads.example.test/api/v1/report-download";
   await page.route(path, async (route) => {
     attempts++;
     await gate;
@@ -258,7 +275,7 @@ test("current and selected-version downloads handle server/mime failures then ha
   let mode = "fail";
   let downloads = 0;
   page.on("download", () => downloads++);
-  await page.route(`**/api/v1/reports/${id}/export/docx`, (r) =>
+  await routeExport(page, null, (r) =>
     mode === "fail"
       ? r.fulfill({
           status: 503,
@@ -276,7 +293,7 @@ test("current and selected-version downloads handle server/mime failures then ha
   await page.route(`**/api/v1/reports/${id}/versions/1`, (r) =>
     r.fulfill({ json: { data: published(1) } }),
   );
-  await page.route(`**/api/v1/reports/${id}/versions/1/export/docx`, (r) =>
+  await routeExport(page, 1, (r) =>
     r.fulfill({ contentType: mime, body: file }),
   );
   await open(page);
@@ -292,7 +309,7 @@ test("current and selected-version downloads handle server/mime failures then ha
     .getByRole("button", { name: "Export current report .docx", exact: true })
     .click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
-    "Something went wrong",
+    "The file transfer was interrupted",
   );
   expect(downloads).toBe(0);
   mode = "ok";
@@ -358,7 +375,7 @@ test("unsaved author content blocks current export, saved content enables it, an
       },
     });
   });
-  await page.route(`**/api/v1/reports/${id}/export/docx`, (r) => {
+  await routeExport(page, null, (r) => {
     exports++;
     return r.fulfill({
       status: 403,
@@ -387,7 +404,7 @@ test("unsaved author content blocks current export, saved content enables it, an
     .getByRole("button", { name: "Export current report .docx", exact: true })
     .click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
-    "Export unavailable",
+    "The report could not be downloaded",
   );
   expect(exports).toBe(1);
   await page
@@ -401,7 +418,7 @@ test("archived sent reports retain export access while Facilitators never reques
   page,
 }) => {
   let calls = 0;
-  await page.route(`**/api/v1/reports/${id}/export/docx`, (r) => {
+  await routeExport(page, null, (r) => {
     calls++;
     return r.fulfill({ contentType: mime, body: file });
   });
@@ -472,3 +489,19 @@ test("an open version list refreshes after the author publishes a new version", 
     page.getByRole("button", { name: "View sent version 2", exact: true }),
   ).toBeVisible();
 });
+
+async function routeExport(
+  page: Page,
+  version: number | null,
+  handler: (route: Route) => Promise<void>,
+) {
+  await page.route(
+    "https://downloads.example.test/api/v1/report-download",
+    (route) => {
+      const expected = version ? `test-version-${version}` : "test-current";
+      return route.request().headers().authorization === `Bearer ${expected}`
+        ? handler(route)
+        : route.fallback();
+    },
+  );
+}

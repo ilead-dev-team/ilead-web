@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  verify:
+  quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -24,10 +24,41 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install browser and system dependencies
+        run: npx playwright install --with-deps chromium
+        timeout-minutes: 15
+      - name: Run the complete browser suite
+        run: npm run test:e2e
+        timeout-minutes: 12
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() || cancelled()
         with:
           name: browser-diagnostics
           path: test-results/
+  verify:
+    needs: [quality, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require all checks to pass
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$BROWSER_RESULT" = success
