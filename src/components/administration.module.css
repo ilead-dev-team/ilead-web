@@ -30,10 +30,18 @@
   flex-wrap: wrap;
   align-items: end;
   gap: 16px;
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  max-width: 720px;
+}
+.search :global(.field) {
+  margin-bottom: 0;
+  flex: 1 1 220px;
+}
+.search > button {
+  margin-bottom: 0;
+}
+.panel > button,
+.page > button {
+  justify-self: start;
 }
 .views {
   display: flex;
@@ -298,8 +306,7 @@
   .termsGrid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .panel,
-  .search {
+  .panel {
     padding: 16px;
   }
   .views button {

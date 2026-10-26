@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 export function Field({
   id,
   label,
@@ -39,9 +40,12 @@ export function Input({ className = "", ...props }: ComponentProps<"input">) {
 }
 export function Select(props: ComponentProps<"select">) {
   return (
-    <select
-      className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-foreground"
-      {...props}
-    />
+    <span className="select-control">
+      <select
+        className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-foreground"
+        {...props}
+      />
+      <ChevronDown aria-hidden="true" focusable="false" />
+    </span>
   );
 }

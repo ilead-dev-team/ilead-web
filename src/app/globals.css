@@ -212,6 +212,47 @@ h1 {
   font-size: 13px;
   font-weight: 600;
 }
+.select-control {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.select-control > select {
+  appearance: none;
+  padding-inline-end: 44px;
+}
+.select-control > svg {
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+.select-control:has(select:disabled) > svg {
+  opacity: 0.5;
+}
+@media (forced-colors: active) {
+  .select-control > select {
+    appearance: auto;
+  }
+  .select-control > svg {
+    display: none;
+  }
+}
+.compact-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  align-items: start;
+  gap: 20px;
+  min-width: 0;
+}
+.compact-records > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .field-error {
   color: var(--destructive);
   font-size: 13px;

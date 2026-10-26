@@ -735,11 +735,13 @@ export function Dashboard() {
         </section>
       )}
       {summary.data && !summary.isError && (
-        <>
-          <Results
-            data={summary.data}
-            role={user.role as "COORDINATOR" | "SPONSOR"}
-          />
+        <Results
+          data={summary.data}
+          role={user.role as "COORDINATOR" | "SPONSOR"}
+        />
+      )}
+      <div className={styles.utilityGrid}>
+        {summary.data && !summary.isError && (
           <ExportControls
             key={`${user.id}:${user.role}:${params}:${summary.data.academicYear.id}`}
             filters={{
@@ -748,9 +750,9 @@ export function Dashboard() {
             }}
             blocked={dirty || summary.isFetching}
           />
-        </>
-      )}
-      {user.role === "COORDINATOR" && <Reminders />}
+        )}
+        {user.role === "COORDINATOR" && <Reminders />}
+      </div>
     </div>
   );
 }

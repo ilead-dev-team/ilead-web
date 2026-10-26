@@ -472,6 +472,30 @@ test("report list compares delivery states and contains mobile scrolling in both
   );
   await page.goto("/reports");
   const region = page.getByRole("region", { name: "Reports list" });
+  const assertSearchAlignment = async () => {
+    const input = (await page
+      .getByLabel("Search academic year", { exact: true })
+      .boundingBox())!;
+    const button = (await page
+      .getByRole("button", { name: "Search reports", exact: true })
+      .boundingBox())!;
+    expect(Math.abs(input.y - button.y)).toBeLessThan(2);
+    expect(Math.abs(input.height - button.height)).toBeLessThan(2);
+    const select = page.getByLabel("Report status", { exact: true });
+    expect(await select.evaluate((el) => getComputedStyle(el).appearance)).toBe(
+      "none",
+    );
+    const icon = select.locator("..").locator("svg");
+    const field = (await select.boundingBox())!;
+    const arrow = (await icon.boundingBox())!;
+    expect(
+      field.x + field.width - arrow.x - arrow.width,
+    ).toBeGreaterThanOrEqual(12);
+    expect(
+      Math.abs(field.y + field.height / 2 - arrow.y - arrow.height / 2),
+    ).toBeLessThan(2);
+  };
+  await assertSearchAlignment();
   await expect(
     region.getByRole("columnheader", { name: "Read", exact: true }),
   ).toBeVisible();
@@ -488,6 +512,7 @@ test("report list compares delivery states and contains mobile scrolling in both
   });
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
+    await assertSearchAlignment();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

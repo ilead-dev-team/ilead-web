@@ -142,7 +142,7 @@ export function ReportHistory({
           )}
           {list.data && (
             <>
-              <ul className="grid gap-3">
+              <ul className="compact-records">
                 {list.data.data.length ? (
                   list.data.data.map((row) => (
                     <li

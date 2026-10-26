@@ -74,7 +74,7 @@ export function ReportLibrary({
           )}
           {query.data && (
             <>
-              <ul className="grid gap-3">
+              <ul className="compact-records">
                 {query.data.data.length ? (
                   query.data.data.map((template) => {
                     const used = sections.some(

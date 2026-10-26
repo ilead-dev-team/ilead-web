@@ -54,8 +54,25 @@
 }
 .list {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   gap: 12px;
   overflow-wrap: anywhere;
+}
+.panel > button {
+  justify-self: start;
+}
+.utilityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  align-items: start;
+  gap: 28px;
+}
+.utilityGrid > section {
+  padding: 20px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
 }
 .list li {
   border-top: 1px solid var(--border);

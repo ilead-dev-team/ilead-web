@@ -19,22 +19,25 @@
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  padding: 20px 22px 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+  max-width: 640px;
 }
 .search > button {
-  margin-bottom: 20px;
+  margin-bottom: 0;
+}
+.search :global(.field) {
+  margin-bottom: 0;
 }
 .filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 240px));
   gap: 16px;
-  padding: 20px 22px 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
+}
+.filters :global(.field) {
+  margin-bottom: 0;
+}
+.panel > button,
+.page > button {
+  justify-self: start;
 }
 .tableViewport {
   max-width: 100%;
@@ -269,10 +272,6 @@
   }
   .lessonGrid {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .search,
-  .filters {
-    padding: 16px 16px 0;
   }
   .filters {
     gap: 12px;

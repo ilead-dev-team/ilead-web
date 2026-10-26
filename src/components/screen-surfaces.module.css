@@ -15,6 +15,10 @@
 .panel > p + p {
   margin-top: 12px;
 }
+.panel > button,
+.page > button {
+  justify-self: start;
+}
 .narrow {
   width: 100%;
   max-width: 820px;

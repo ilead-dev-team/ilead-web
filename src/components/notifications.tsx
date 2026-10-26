@@ -194,7 +194,7 @@ function NotificationCard({
   const target = notificationTarget(row.link, user),
     kind = reminderKind(row.type);
   return (
-    <article aria-label={row.title} className={styles.panel}>
+    <article aria-label={row.title} className="border-b border-border pb-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-semibold">{row.title}</h3>
         <span className="rounded border border-border px-2 py-1 text-xs">
@@ -317,14 +317,14 @@ export function Reminders() {
       {query.data && !query.isError && (
         <>
           {query.data.data.length ? (
-            <ul className="grid gap-4">
+            <ul className="compact-records">
               {query.data.data.map((row) => {
                 const target = reminderTarget(row, user);
                 return (
                   <li key={row.id}>
                     <article
                       aria-label={`${reminderLabels[row.kind]} reminder`}
-                      className="rounded-lg border border-border p-4"
+                      className="border-b border-border pb-4"
                     >
                       <div className="flex flex-wrap justify-between gap-2">
                         <h3 className="font-semibold">
@@ -486,7 +486,7 @@ export function NotificationInbox() {
         {query.data && !query.isError && (
           <>
             {query.data.data.length ? (
-              <ul className="grid gap-4">
+              <ul className="compact-records">
                 {query.data.data.map((row) => (
                   <li key={row.id}>
                     <NotificationCard
