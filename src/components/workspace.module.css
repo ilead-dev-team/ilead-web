@@ -94,10 +94,14 @@
   align-self: start;
   height: calc(100dvh - 64px);
   overflow-y: auto;
+  scrollbar-width: none;
   padding: 16px 14px;
   border-right: 1px solid var(--sidebar-border);
   background: var(--sidebar);
   color: var(--sidebar-foreground);
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 .navigation {
   display: flex;
