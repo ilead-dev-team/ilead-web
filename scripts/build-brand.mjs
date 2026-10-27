@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
 // The source artwork is a three-person crest. These paths keep its three heads,
@@ -34,24 +34,14 @@ const icon = svg(
   1024,
   1024,
 );
-// At 16px the full crest's narrow ribbons collapse into gray pixels. The tab
-// variant keeps its three heads and shared upward motion with broader shapes.
-// A black background and white silhouette keep the tab icon legible at 16px.
-const tabIcon = svg(
-  `<rect width="64" height="64" rx="13" fill="#000000"/>
-   <g fill="#ffffff">
-     <circle cx="32" cy="12" r="5.8"/>
-     <circle cx="13" cy="25" r="4.5"/>
-     <circle cx="51" cy="25" r="4.5"/>
-     <path d="M15 22C22 27 27 29 32 29S42 27 49 22C44 29 41 36 43 42L32 33 21 42C23 36 20 29 15 22Z"/>
-     <path d="M6 35C10 31 16 30 23 33L17 41C13 39 9 40 5 45Z"/>
-     <path d="M58 35C54 31 48 30 41 33L47 41C51 39 55 40 59 45Z"/>
-     <path d="M32 37C22 43 12 47 3 57C16 54 25 50 32 45C39 50 48 54 61 57C52 47 42 43 32 37Z"/>
-   </g>`,
-  "0 0 64 64",
-  64,
-  64,
-);
+// Use the supplied monochrome mark itself for browser icons. A square crop
+// removes only the extra black margin and keeps the three figures intact.
+const faviconReference = await readFile("docs/favicon-reference.png");
+const tabIcon = await sharp(faviconReference)
+  .extract({ left: 14, top: 27, width: 104, height: 104 })
+  .resize(256, 256)
+  .png()
+  .toBuffer();
 
 await mkdir("public/brand", { recursive: true });
 await mkdir("src/app", { recursive: true });
@@ -65,13 +55,13 @@ await Promise.all([
   ),
   writeFile("public/brand/ilead-wordmark-ink.svg", wordmark("#18181b")),
   writeFile("public/brand/ilead-wordmark-white.svg", wordmark("#ffffff")),
-  writeFile("src/app/icon.svg", tabIcon),
+  writeFile("src/app/icon.png", tabIcon),
 ]);
 
 const png = async (size) =>
   sharp(Buffer.from(icon)).resize(size, size).png().toBuffer();
 const tabPng = async (size) =>
-  sharp(Buffer.from(tabIcon)).resize(size, size).png().toBuffer();
+  sharp(tabIcon).resize(size, size).png().toBuffer();
 const [png192, png512, favicon16, favicon32, favicon48] = await Promise.all([
   png(192),
   png(512),
