@@ -1,6 +1,43 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("the new brand appears in both themes and exposes browser and app icons", async ({
+  page,
+  request,
+}, testInfo) => {
+  await page.goto("/login");
+  const light = page.locator('img.logo-light[alt="iLead platform"]');
+  const dark = page.locator('img.logo-dark[alt="iLead platform"]');
+  await expect(light).toBeVisible();
+  await expect(light).toHaveAttribute("src", /ilead-wordmark-ink\.svg/);
+  await expect(dark).toBeHidden();
+  await page.screenshot({
+    path: testInfo.outputPath("brand-light.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(dark).toBeVisible();
+  await expect(light).toBeHidden();
+  await page.screenshot({
+    path: testInfo.outputPath("brand-dark.png"),
+    fullPage: true,
+  });
+  const favicon = await request.get("/favicon.ico");
+  expect(favicon.ok()).toBe(true);
+  expect((await favicon.body()).length).toBeGreaterThan(500);
+  const icon = await request.get("/icon.svg");
+  expect(icon.ok()).toBe(true);
+  expect(await icon.text()).toContain("<svg");
+  const manifest = await request.get("/manifest.webmanifest");
+  expect(manifest.ok()).toBe(true);
+  expect((await manifest.json()).icons).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ src: "/brand/push-192.png" }),
+      expect.objectContaining({ src: "/brand/push-512.png" }),
+    ]),
+  );
+});
+
 test("first visits follow system theme while a chosen theme survives system changes and reload", async ({
   page,
 }) => {
