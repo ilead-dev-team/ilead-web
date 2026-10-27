@@ -19,7 +19,7 @@ const base = {
   openChangeRequests: 0,
   archivedAt: null as string | null,
   sentAt: null,
-  firstReadAt: null,
+  firstReadAt: null as string | null,
   sections: [
     {
       id: summaryId,
@@ -161,6 +161,44 @@ test("institutional preview keeps paper styling in both themes and contains A4 s
     path: "test-results/report-document-desktop.png",
     fullPage: true,
   });
+});
+
+test("sent report details sit beside the document and stack on narrow screens", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await open(page, {
+    ...structuredClone(base),
+    status: "SENT",
+    version: 4,
+    firstReadAt: "2026-10-25T10:00:00.000Z",
+  });
+  const details = page.getByRole("complementary", { name: "Report details" });
+  await expect(
+    details.getByRole("heading", { name: "2026-10-14" }),
+  ).toBeVisible();
+  await expect(details).toContainText("Term 1");
+  await expect(details).toContainText("Coordinator");
+  await expect(details).toContainText("Version");
+  await expect(details).toContainText("4");
+  await expect(details).toContainText("2026-10-25");
+  const preview = page.getByRole("region", {
+    name: "Current report document preview",
+  });
+  const wideDetails = await details.boundingBox();
+  const wideDocument = await preview.boundingBox();
+  expect(wideDetails!.x).toBeGreaterThan(wideDocument!.x + wideDocument!.width);
+  await page.screenshot({ path: "test-results/report-details-desktop.png" });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const narrowDetails = await details.boundingBox();
+  const narrowDocument = await preview.boundingBox();
+  expect(narrowDetails!.y + narrowDetails!.height).toBeLessThan(
+    narrowDocument!.y,
+  );
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
 });
 
 test("draft preview renders unsaved text safely without saving or publishing", async ({

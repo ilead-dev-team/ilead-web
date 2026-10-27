@@ -41,10 +41,6 @@ export function ReportDocument({
   }
   return (
     <div className="my-5 min-w-0 space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Document preview uses the approved Word styling. Narrow views adapt the
-        page width; Word page breaks may differ.
-      </p>
       {historical && (
         <p className="text-sm">
           Formatted with the current approved document style; the published

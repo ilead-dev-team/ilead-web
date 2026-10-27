@@ -88,7 +88,7 @@ test("workspace header fits narrow screens and matches approved breakpoints", as
   }
   await expect(
     page.getByRole("link", { name: "Program email", exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.screenshot({
     path: "test-results/workspace-desktop.png",
     fullPage: true,

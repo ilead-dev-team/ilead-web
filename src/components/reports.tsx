@@ -608,6 +608,56 @@ function ReportDetailWorkspace({ id }: { id: string }) {
     [next[index], next[target]] = [next[target]!, next[index]!];
     change(next);
   };
+  const details = report && (
+    <aside className={styles.detailSidebar} aria-label="Report details">
+      <p className={styles.detailEyebrow}>Report details</p>
+      <h2>{report.session.date}</h2>
+      <span className={styles.badge}>{reportLabels[report.status]}</span>
+      <dl className={styles.detailList}>
+        <div>
+          <dt>Academic year</dt>
+          <dd>{report.academicYear}</dd>
+        </div>
+        <div>
+          <dt>Term</dt>
+          <dd>{report.term.name}</dd>
+        </div>
+        <div>
+          <dt>Author</dt>
+          <dd>{report.author.name}</dd>
+        </div>
+        <div>
+          <dt>Version</dt>
+          <dd>{report.version}</dd>
+        </div>
+        <div>
+          <dt>Change requests</dt>
+          <dd>{report.openChangeRequests} open</dd>
+        </div>
+        {report.firstReadAt && (
+          <div>
+            <dt>First read</dt>
+            <dd>{report.firstReadAt.slice(0, 10)}</dd>
+          </div>
+        )}
+      </dl>
+      {editable && (
+        <p role="status" className={styles.detailStatus}>
+          {save.isPending
+            ? "Saving report…"
+            : dirty
+              ? "Unsaved report changes"
+              : "Saved report content"}
+        </p>
+      )}
+      {editable && savedAt && !dirty && !save.isPending && (
+        <p className={styles.detailStatus}>Saved at {savedAt}</p>
+      )}
+      {report.archivedAt && (
+        <p className={styles.detailStatus}>Archived — read only</p>
+      )}
+    </aside>
+  );
   return (
     <section className={styles.page}>
       <h1>Session report</h1>
@@ -618,36 +668,7 @@ function ReportDetailWorkspace({ id }: { id: string }) {
       )}
       {report && (
         <>
-          <div className={styles.panel}>
-            <h2>
-              {report.session.date} · {reportLabels[report.status]}
-            </h2>
-            <p>
-              {report.academicYear} · {report.term.name}
-            </p>
-            <p>
-              Author: {report.author.name} · Version {report.version}
-            </p>
-            <p>{report.openChangeRequests} open change requests</p>
-            {editable && (
-              <>
-                <p role="status">
-                  {save.isPending
-                    ? "Saving report…"
-                    : dirty
-                      ? "Unsaved report changes"
-                      : "Saved report content"}
-                </p>
-                {savedAt && !dirty && !save.isPending && (
-                  <p>Saved at {savedAt}</p>
-                )}
-              </>
-            )}
-            {report.firstReadAt && (
-              <p>First read: {report.firstReadAt.slice(0, 10)}</p>
-            )}
-            {report.archivedAt && <p>Archived — read only</p>}
-          </div>
+          {editable && details}
           {editable ? (
             <>
               <p className="mb-4 text-muted-foreground">
@@ -893,7 +914,12 @@ function ReportDetailWorkspace({ id }: { id: string }) {
               </div>
             </>
           ) : (
-            <ReportDocument report={report} />
+            <div className={styles.readLayout}>
+              {details}
+              <div className={styles.readDocument}>
+                <ReportDocument report={report} />
+              </div>
+            </div>
           )}
           {dirty && !editable && (
             <div className="my-4 grid gap-3">

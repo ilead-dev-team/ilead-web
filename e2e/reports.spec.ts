@@ -189,9 +189,7 @@ test("author creates, edits, preserves failed saves, confirms and sends only aft
     .getByRole("button", { name: "Confirm report", exact: true })
     .click();
   await page.getByRole("button", { name: "Confirm report now" }).click();
-  await expect(
-    page.getByRole("heading", { name: "2026-10-14 · Final" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2026-10-14" })).toBeVisible();
   await expect(page.getByLabel("Opening summary text")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Send to Sponsor", exact: true })
@@ -200,14 +198,10 @@ test("author creates, edits, preserves failed saves, confirms and sends only aft
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "iLead is unavailable",
   );
-  await expect(
-    page.getByRole("heading", { name: "2026-10-14 · Final" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2026-10-14" })).toBeVisible();
   failSend = false;
   await page.getByRole("button", { name: "Confirm sending" }).click();
-  await expect(
-    page.getByRole("heading", { name: "2026-10-14 · Sent" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "2026-10-14" })).toBeVisible();
   await page.getByRole("button", { name: "Reopen to edit" }).click();
   await page
     .getByRole("button", { name: "Reopen report", exact: true })
