@@ -459,7 +459,28 @@ export function Dashboard() {
           aria-label="Loading program overview"
           className={styles.loadingOverview}
         >
-          Loading program overview...
+          <span className="sr-only">Loading program overview</span>
+          <div className={styles.loadingCards} aria-hidden="true">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div className={styles.loadingCard} key={index}>
+                <span className="skeleton-bar" />
+                <span className="skeleton-bar" />
+                <span className="skeleton-bar" />
+              </div>
+            ))}
+          </div>
+          <div className={styles.loadingPanels} aria-hidden="true">
+            <div className={styles.loadingPanel}>
+              <span className="skeleton-bar" />
+              <span className="skeleton-bar" />
+              <span className="skeleton-bar" />
+            </div>
+            <div className={styles.loadingPanel}>
+              <span className="skeleton-bar" />
+              <span className="skeleton-bar" />
+              <span className="skeleton-bar" />
+            </div>
+          </div>
         </section>
       )}
       <section className={styles.filterBar} aria-labelledby="dashboard-filters">

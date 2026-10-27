@@ -499,7 +499,7 @@ test("Sponsor payload containing Coordinator-only data fails closed", async ({
   ).toHaveCount(0);
 });
 
-test("slow dashboard requests explain cold start and Facilitators never request staff data", async ({
+test("slow dashboard requests show a skeleton and Facilitators never request staff data", async ({
   page,
 }) => {
   await setup(page);
@@ -509,11 +509,14 @@ test("slow dashboard requests explain cold start and Facilitators never request 
   });
   await page.goto("/dashboard");
   await expect(
-    page.getByText(
-      "The server may be waking up. This can take a moment. Keep this page open.",
-      { exact: true },
-    ),
+    page.getByRole("status", { name: "Loading program overview" }),
   ).toBeVisible({ timeout: 10000 });
+  await page.screenshot({
+    path: test.info().outputPath("dashboard-loading.png"),
+  });
+  await expect(
+    page.getByRole("status", { name: "Loading program overview" }),
+  ).toBeHidden({ timeout: 20000 });
   await expect(
     page.getByRole("button", { name: "Download Excel" }),
   ).toBeEnabled();

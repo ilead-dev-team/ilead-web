@@ -328,7 +328,7 @@ test("cold starts never pretend empty; failed lists and unread count can be retr
     name: "Notification inbox",
     exact: true,
   });
-  await expect(inbox.getByText("Connecting to iLead…")).toBeVisible();
+  await expect(inbox.getByRole("status", { name: "Loading" })).toBeVisible();
   await expect(inbox.getByText("No notifications on this page.")).toHaveCount(
     0,
   );
