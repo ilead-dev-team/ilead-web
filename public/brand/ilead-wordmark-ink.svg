@@ -1,1 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="205" height="56" viewBox="0 0 205 56" style="color:#18181b"><g transform="translate(0,0) scale(.65)"><path d="M8 58h37V14l10-7 10 7v44m-10-51v51m10-40 14 12v28h33" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="miter"/></g><text x="88" y="30" fill="currentColor" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="750" letter-spacing="-.5">iLEAD</text><text x="89" y="47" fill="currentColor" font-family="Segoe UI,Arial,sans-serif" font-size="8" letter-spacing="1.8">PLATFORM</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="205" height="56" viewBox="0 0 205 56"><g fill="#18181b" transform="translate(-11 -15) scale(.06)">
+  <circle cx="626" cy="380" r="55"/>
+  <circle cx="409" cy="528" r="47"/>
+  <circle cx="845" cy="528" r="47"/>
+  <path d="M463 392C519 429 579 470 626 470S733 429 790 392C714 472 673 561 720 693L626 576 532 693C579 561 539 472 463 392Z"/>
+  <path d="M522 574C418 574 335 616 307 689C296 719 300 751 312 780C354 687 433 615 522 574Z"/>
+  <path d="M730 574C834 574 917 616 945 689C956 719 952 751 940 780C898 687 819 615 730 574Z"/>
+  <path d="M626 626C537 719 371 760 221 928C366 885 483 846 587 760C513 800 426 823 345 844C439 748 547 706 626 665Z"/>
+  <path d="M626 626C715 719 881 760 1031 928C886 885 769 846 665 760C739 800 826 823 907 844C813 748 705 706 626 665Z"/>
+</g>
+    <text x="59" y="32" fill="#18181b" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="750" letter-spacing="-.5">iLEAD</text>
+    <text x="60" y="46" fill="#18181b" font-family="Segoe UI,Arial,sans-serif" font-size="8" letter-spacing="1.6">PLATFORM</text></svg>
