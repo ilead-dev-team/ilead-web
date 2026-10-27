@@ -24,10 +24,16 @@ test("the new brand appears in both themes and exposes browser and app icons", a
   });
   const favicon = await request.get("/favicon.ico");
   expect(favicon.ok()).toBe(true);
-  expect((await favicon.body()).length).toBeGreaterThan(500);
+  const faviconBytes = await favicon.body();
+  expect(faviconBytes.length).toBeGreaterThan(500);
+  expect(faviconBytes.readUInt16LE(4)).toBe(3);
+  expect([6, 22, 38].map((offset) => faviconBytes.readUInt8(offset))).toEqual([
+    16, 32, 48,
+  ]);
   const icon = await request.get("/icon.svg");
   expect(icon.ok()).toBe(true);
   expect(await icon.text()).toContain("<svg");
+  expect(await icon.text()).toContain('fill="#007595"');
   const manifest = await request.get("/manifest.webmanifest");
   expect(manifest.ok()).toBe(true);
   expect((await manifest.json()).icons).toEqual(

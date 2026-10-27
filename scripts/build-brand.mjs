@@ -34,6 +34,25 @@ const icon = svg(
   1024,
   1024,
 );
+// At 16px the full crest's narrow ribbons collapse into gray pixels. The tab
+// variant keeps its three heads and shared upward motion with broader shapes.
+// #007595 is the sRGB-clipped form of the approved primary color
+// oklch(0.52 0.105 223.128); the rasterizer does not support OKLCH in SVG.
+const tabIcon = svg(
+  `<rect width="64" height="64" rx="13" fill="#007595"/>
+   <g fill="#ffffff">
+     <circle cx="32" cy="12" r="5.8"/>
+     <circle cx="13" cy="25" r="4.5"/>
+     <circle cx="51" cy="25" r="4.5"/>
+     <path d="M15 22C22 27 27 29 32 29S42 27 49 22C44 29 41 36 43 42L32 33 21 42C23 36 20 29 15 22Z"/>
+     <path d="M6 35C10 31 16 30 23 33L17 41C13 39 9 40 5 45Z"/>
+     <path d="M58 35C54 31 48 30 41 33L47 41C51 39 55 40 59 45Z"/>
+     <path d="M32 37C22 43 12 47 3 57C16 54 25 50 32 45C39 50 48 54 61 57C52 47 42 43 32 37Z"/>
+   </g>`,
+  "0 0 64 64",
+  64,
+  64,
+);
 
 await mkdir("public/brand", { recursive: true });
 await mkdir("src/app", { recursive: true });
@@ -47,20 +66,26 @@ await Promise.all([
   ),
   writeFile("public/brand/ilead-wordmark-ink.svg", wordmark("#18181b")),
   writeFile("public/brand/ilead-wordmark-white.svg", wordmark("#ffffff")),
-  writeFile("src/app/icon.svg", icon),
+  writeFile("src/app/icon.svg", tabIcon),
 ]);
 
 const png = async (size) =>
   sharp(Buffer.from(icon)).resize(size, size).png().toBuffer();
-const [png32, png192, png512] = await Promise.all([
-  png(32),
+const tabPng = async (size) =>
+  sharp(Buffer.from(tabIcon)).resize(size, size).png().toBuffer();
+const [png192, png512, favicon16, favicon32, favicon48] = await Promise.all([
   png(192),
   png(512),
+  tabPng(16),
+  tabPng(32),
+  tabPng(48),
 ]);
 await Promise.all([
   writeFile("public/brand/push-192.png", png192),
   writeFile("public/brand/push-512.png", png512),
   writeFile("artifacts/brand-icon-preview.png", png512),
+  writeFile("artifacts/favicon-16.png", favicon16),
+  writeFile("artifacts/favicon-32.png", favicon32),
   sharp(Buffer.from(wordmark("#18181b")))
     .resize(820)
     .png()
@@ -70,14 +95,27 @@ await Promise.all([
     ),
 ]);
 
-// ICO accepts a PNG payload; the single 32px entry covers legacy tab clients.
-const header = Buffer.alloc(22);
+// Include 16, 32 and 48px PNG entries for browser tabs at common display scales.
+const favicons = [
+  [16, favicon16],
+  [32, favicon32],
+  [48, favicon48],
+];
+const header = Buffer.alloc(6 + 16 * favicons.length);
 header.writeUInt16LE(1, 2);
-header.writeUInt16LE(1, 4);
-header.writeUInt8(32, 6);
-header.writeUInt8(32, 7);
-header.writeUInt16LE(1, 10);
-header.writeUInt16LE(32, 12);
-header.writeUInt32LE(png32.length, 14);
-header.writeUInt32LE(header.length, 18);
-await writeFile("src/app/favicon.ico", Buffer.concat([header, png32]));
+header.writeUInt16LE(favicons.length, 4);
+let offset = header.length;
+for (const [index, [size, data]] of favicons.entries()) {
+  const entry = 6 + index * 16;
+  header.writeUInt8(size, entry);
+  header.writeUInt8(size, entry + 1);
+  header.writeUInt16LE(1, entry + 4);
+  header.writeUInt16LE(32, entry + 6);
+  header.writeUInt32LE(data.length, entry + 8);
+  header.writeUInt32LE(offset, entry + 12);
+  offset += data.length;
+}
+await writeFile(
+  "src/app/favicon.ico",
+  Buffer.concat([header, ...favicons.map(([, data]) => data)]),
+);
