@@ -168,10 +168,8 @@ export function Recovery({ requestId }: { requestId?: string | null }) {
           </p>
           {!query.data.detail.mailboxConnected && (
             <p className="notice">
-              Account email is unavailable. Check the configured sender before
-              sending a reset email.{" "}
-              <Link href="/mailbox">Open email settings</Link>, then refresh
-              this request.
+              Account email is unavailable. Ask the deployment administrator to
+              check the sender, then refresh this request.
             </p>
           )}
           <h3 className="mt-4 font-semibold">Delivery history</h3>

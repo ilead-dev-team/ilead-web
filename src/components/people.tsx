@@ -415,7 +415,9 @@ function Invitations() {
                 : sender.data.reconnectRequired
                   ? "Reconnect your mailbox before sending invitation emails."
                   : "No mailbox connected. An invitation can be stored, but its email cannot be queued until you connect a mailbox and resend."}{" "}
-            <Link href="/mailbox">Manage account email</Link>
+            {sender.data.scope !== "PROGRAM" && (
+              <Link href="/mailbox">Manage account email</Link>
+            )}
           </p>
         )
       )}
@@ -498,7 +500,9 @@ function Invitations() {
           </p>
           <p>{deliveryMessage(result.deliveryStatus)}</p>
           {result.deliveryStatus === "FAILED" && (
-            <Link href="/mailbox">Check mailbox connection</Link>
+            <span>
+              Ask the deployment administrator to check email delivery.
+            </span>
           )}
         </div>
       )}
@@ -719,7 +723,6 @@ export function People() {
         <h1>People</h1>
 
         <div className="mt-3 flex flex-wrap gap-4">
-          <Link href="/mailbox">Program email</Link>
           <Link href="/people/recovery">Account recovery</Link>
         </div>
       </header>

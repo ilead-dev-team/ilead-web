@@ -1,6 +1,7 @@
 "use client";
 import styles from "./screen-surfaces.module.css";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
@@ -17,6 +18,7 @@ import { Feedback, Pending } from "./account/feedback";
 import { useSession } from "./session";
 export function Mailbox() {
   const user = useSession();
+  const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null),
     refreshButton = useRef<HTMLButtonElement>(null);
   const [needsRefresh, setNeedsRefresh] = useState(false);
@@ -71,6 +73,9 @@ export function Mailbox() {
   });
   const busy = connect.isPending || disconnect.isPending;
   useEffect(() => {
+    if (query.data?.scope === "PROGRAM") router.replace("/people");
+  }, [query.data?.scope, router]);
+  useEffect(() => {
     if (disconnect.isSuccess && !disconnect.isPending) {
       dialog.current?.close();
       refreshButton.current?.focus();
@@ -86,13 +91,10 @@ export function Mailbox() {
       refreshButton.current?.focus();
     }
   }
+  if (query.data?.scope === "PROGRAM") return <Pending active />;
   return (
     <div className={`${styles.page} ${styles.narrow}`}>
-      <h1>
-        {query.data?.scope === "PROGRAM"
-          ? "Program email"
-          : "Connected mailbox"}
-      </h1>
+      <h1>Connected mailbox</h1>
 
       <Pending active={query.isPending || query.isFetching || busy} />
       <Feedback error={query.error || connect.error || disconnect.error} />
@@ -118,23 +120,7 @@ export function Mailbox() {
           change. A lost response may still have completed the operation.
         </p>
       )}
-      {query.data?.scope === "PROGRAM" && !query.isError && (
-        <section
-          aria-label="Program email status"
-          className={`${styles.panel} w-fit max-w-full justify-self-start`}
-        >
-          <p className="break-words">
-            {query.data.connected
-              ? `Sending configured: ${query.data.address}`
-              : "Program email is not configured or sending is disabled."}
-          </p>
-
-          {!query.data.connected && (
-            <p role="status">Contact an administrator to enable email.</p>
-          )}
-        </section>
-      )}
-      {query.data && query.data.scope !== "PROGRAM" && !query.isError && (
+      {query.data && !query.isError && (
         <div className="notice">
           <p className="break-words">
             {query.data.connected

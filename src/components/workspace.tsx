@@ -10,7 +10,6 @@ import {
   ListChecks,
   CalendarRange,
   PanelsTopLeft,
-  Mail,
   KeyRound,
   Users,
   CircleHelp,
@@ -215,7 +214,6 @@ function WorkspaceLinks({ onNavigate }: { onNavigate?: () => void }) {
             label: "Account recovery",
             icon: KeyRound,
           },
-          { href: "/mailbox", label: "Program email", icon: Mail },
           {
             href: "/settings/academic-years",
             label: "Academic years",
