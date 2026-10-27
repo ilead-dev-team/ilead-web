@@ -33,7 +33,7 @@ test("the new brand appears in both themes and exposes browser and app icons", a
   const icon = await request.get("/icon.svg");
   expect(icon.ok()).toBe(true);
   expect(await icon.text()).toContain("<svg");
-  expect(await icon.text()).toContain('fill="#007595"');
+  expect(await icon.text()).toContain('fill="#000000"');
   const manifest = await request.get("/manifest.webmanifest");
   expect(manifest.ok()).toBe(true);
   expect((await manifest.json()).icons).toEqual(

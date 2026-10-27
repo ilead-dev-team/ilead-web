@@ -96,6 +96,45 @@ body {
   font-size: 14px;
   line-height: 1.55;
 }
+.skeleton-bar {
+  display: block;
+  height: 13px;
+  border-radius: 5px;
+  background: linear-gradient(
+    100deg,
+    var(--muted) 20%,
+    color-mix(in oklab, var(--muted) 80%, var(--foreground)) 45%,
+    var(--muted) 70%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.pending-skeleton {
+  width: min(100%, 190px);
+  padding-block: 5px;
+  display: grid;
+  gap: 8px;
+}
+.pending-skeleton-wide {
+  width: 100%;
+}
+.pending-skeleton-short {
+  width: 62%;
+}
+.pending-skeleton-caption {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+@keyframes skeleton-shimmer {
+  to {
+    background-position-x: -220%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+  }
+}
 a,
 button,
 input,

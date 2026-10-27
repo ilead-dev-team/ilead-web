@@ -19,10 +19,14 @@ export function Pending({ active }: { active: boolean }) {
     };
   }, [active]);
   return active ? (
-    <p role="status" className="text-sm text-muted-foreground">
-      {slow
-        ? "The server may be waking up. This can take a moment. Keep this page open."
-        : "Connecting to iLead…"}
-    </p>
+    <div role="status" aria-label="Loading" className="pending-skeleton">
+      <span className="sr-only">Loading</span>
+      <span aria-hidden="true" className="skeleton-bar pending-skeleton-wide" />
+      <span
+        aria-hidden="true"
+        className="skeleton-bar pending-skeleton-short"
+      />
+      {slow && <span className="pending-skeleton-caption">Still loading…</span>}
+    </div>
   ) : null;
 }

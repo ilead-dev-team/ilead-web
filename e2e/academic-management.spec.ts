@@ -503,9 +503,7 @@ test("slow calendar reads show loading before real empty data and failures offer
     name: "Saved academic years",
     exact: true,
   });
-  await expect(
-    list.getByText("Connecting to iLead…", { exact: true }),
-  ).toBeVisible();
+  await expect(list.getByRole("status", { name: "Loading" })).toBeVisible();
   await expect(list.getByText("No academic years on this page.")).toHaveCount(
     0,
   );

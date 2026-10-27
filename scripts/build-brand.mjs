@@ -36,10 +36,9 @@ const icon = svg(
 );
 // At 16px the full crest's narrow ribbons collapse into gray pixels. The tab
 // variant keeps its three heads and shared upward motion with broader shapes.
-// #007595 is the sRGB-clipped form of the approved primary color
-// oklch(0.52 0.105 223.128); the rasterizer does not support OKLCH in SVG.
+// A black background and white silhouette keep the tab icon legible at 16px.
 const tabIcon = svg(
-  `<rect width="64" height="64" rx="13" fill="#007595"/>
+  `<rect width="64" height="64" rx="13" fill="#000000"/>
    <g fill="#ffffff">
      <circle cx="32" cy="12" r="5.8"/>
      <circle cx="13" cy="25" r="4.5"/>
