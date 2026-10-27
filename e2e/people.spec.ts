@@ -498,7 +498,7 @@ test("people and invitation review support contained mobile tables, keyboard foc
     page
       .getByRole("main")
       .getByRole("link", { name: "Program email", exact: true }),
-  ).toHaveAttribute("href", "/mailbox");
+  ).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(
