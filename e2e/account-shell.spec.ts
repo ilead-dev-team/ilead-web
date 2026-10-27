@@ -70,7 +70,7 @@ test("workspace header fits narrow screens and matches approved breakpoints", as
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const box = await page.getByRole("banner").boundingBox();
-    expect(box?.height).toBe(width < 768 ? 68 : 76);
+    expect(box?.height).toBe(width < 768 ? 60 : 64);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(width);
@@ -99,6 +99,33 @@ test("workspace header fits narrow screens and matches approved breakpoints", as
     path: "test-results/workspace-mobile-other-theme.png",
     fullPage: true,
   });
+});
+test("coordinator sidebar fits a desktop window and keeps short-window links reachable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setup(page);
+  const sidebar = page
+    .locator("aside")
+    .filter({ has: page.getByRole("navigation", { name: "Main navigation" }) });
+  const fit = await sidebar.evaluate((element) => ({
+    client: element.clientHeight,
+    scroll: element.scrollHeight,
+    scrollbar: getComputedStyle(element).scrollbarWidth,
+  }));
+  expect(fit.scroll).toBeLessThanOrEqual(fit.client);
+  expect(fit.scrollbar).toBe("none");
+  await page.screenshot({ path: "test-results/workspace-sidebar-desktop.png" });
+
+  await page.setViewportSize({ width: 1440, height: 560 });
+  const lastLink = sidebar.getByRole("link", { name: "Section library" });
+  await lastLink.scrollIntoViewIfNeeded();
+  await expect(lastLink).toBeInViewport();
+  expect(
+    await sidebar.evaluate(
+      (element) => getComputedStyle(element).scrollbarWidth,
+    ),
+  ).toBe("none");
 });
 test("password success sends only two API fields, clears secrets and requires sign-in", async ({
   page,
