@@ -11,3 +11,7 @@ artifacts/
 branch_structure.json
 artifacts-*.txt
 .next-integration/
+
+# Python security guard bytecode
+__pycache__/
+*.pyc
