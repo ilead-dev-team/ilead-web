@@ -3,12 +3,23 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Existing synthetic staging accounts only. Credentials and cookies never enter evidence.
-const origin = "https://ilead-web.vercel.app";
-const [accountsFile, previousEvidenceFile, outputDirectory] =
-  process.argv.slice(2);
+const target = new URL(
+  process.env.ILEAD_ACCEPTANCE_ORIGIN ?? "https://ilead-web.vercel.app",
+);
 assert.ok(
-  accountsFile && previousEvidenceFile && outputDirectory,
-  "Usage: node scripts/check-deployed-acceptance.mjs <ignored-accounts.json> <prior-evidence.json> <ignored-output-directory>",
+  target.protocol === "https:" && target.href === `${target.origin}/`,
+  "ILEAD_ACCEPTANCE_ORIGIN must be an HTTPS origin without credentials or a path",
+);
+const origin = target.origin;
+const [accountsFile, previousEvidenceFile, outputDirectory, scope] =
+  process.argv.slice(2);
+const coreOnly = scope === "--core-only";
+assert.ok(
+  accountsFile &&
+    previousEvidenceFile &&
+    outputDirectory &&
+    (!scope || coreOnly),
+  "Usage: node scripts/check-deployed-acceptance.mjs <ignored-accounts.json> <prior-evidence.json> <ignored-output-directory> [--core-only]",
 );
 const { actors } = JSON.parse(await readFile(accountsFile, "utf8"));
 const previous = JSON.parse(await readFile(previousEvidenceFile, "utf8"));
@@ -77,8 +88,10 @@ for (const role of ["COORDINATOR", "SPONSOR", "FACILITATOR"]) {
   assert.ok(cookie, `${role} login did not return cookies`);
   const user = (await request("/auth/me")).data;
   assert.equal(user.role, role);
-  await request("/notifications?page=1&pageSize=20&unread=false");
-  await request("/reminders?page=1&pageSize=20");
+  if (!coreOnly) {
+    await request("/notifications?page=1&pageSize=20&unread=false");
+    await request("/reminders?page=1&pageSize=20");
+  }
   if (role === "FACILITATOR") {
     assert.ok(
       user.roundtableId,
@@ -90,8 +103,9 @@ for (const role of ["COORDINATOR", "SPONSOR", "FACILITATOR"]) {
     for (const route of [
       "/sessions?page=1&pageSize=20",
       `/reports/${reportId}`,
-      `/reports/${reportId}/export/docx`,
-      "/exports/roundtables.xlsx",
+      ...(coreOnly
+        ? []
+        : [`/reports/${reportId}/export/docx`, "/exports/roundtables.xlsx"]),
     ])
       await request(route, 403);
     continue;
@@ -133,7 +147,7 @@ for (const role of ["COORDINATOR", "SPONSOR", "FACILITATOR"]) {
   await request(`/reports/${reportId}/versions?page=1&pageSize=20`);
   const version = (await request(`/reports/${reportId}/versions/1`)).data;
   assert.equal(version.version, 1);
-  for (const [route, name, mime] of [
+  const exports = [
     [
       `/reports/${reportId}/export/docx`,
       `${role.toLowerCase()}-report-current.docx`,
@@ -149,7 +163,8 @@ for (const role of ["COORDINATOR", "SPONSOR", "FACILITATOR"]) {
       `${role.toLowerCase()}-roundtables.xlsx`,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ],
-  ]) {
+  ];
+  for (const [route, name, mime] of coreOnly ? [] : exports) {
     const file = await request(route);
     assert.ok(
       file.response.headers.get("content-type")?.includes(mime),
@@ -187,4 +202,10 @@ await writeFile(
     2,
   ),
 );
-console.log(JSON.stringify({ passed: checks.length, roles: 3, exports: 6 }));
+console.log(
+  JSON.stringify({
+    passed: checks.length,
+    roles: 3,
+    exports: coreOnly ? 0 : 6,
+  }),
+);
